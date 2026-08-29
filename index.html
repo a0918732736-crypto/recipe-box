@@ -1453,23 +1453,21 @@
 
   var pendingRecovery = null;
 
+  // This page has no separate "live doc" to defer to any more -- this
+  // browser's localStorage IS the record. So once a snapshot exists, it is
+  // authoritative: the whole list is rebuilt from it on every load, which is
+  // what makes additions, edits, re-categorizations and deletions all survive
+  // a refresh (the old approach only ever offered to re-add a missing title,
+  // and silently reverted everything else -- edited ingredients/steps,
+  // cuisine changes, deletions -- back to what was baked into this file).
   function checkLocalRecovery() {
     var snapshot = loadSnapshot();
     if (!snapshot) { saveSnapshot(); return; }
-    var currentKeys = {};
     Array.prototype.forEach.call(list.querySelectorAll(".card"), function (c) {
-      currentKeys[cardKeyOf(serializeCard(c))] = true;
+      c.remove();
     });
-    var missing = snapshot.cards.filter(function (c) { return !currentKeys[cardKeyOf(c)]; });
-    if (!missing.length) { saveSnapshot(); return; }
-    // Don't overwrite the snapshot yet -- wait for the viewer's decision so
-    // the recovery option survives even if they leave without deciding.
-    pendingRecovery = missing;
-    var names = missing.slice(0, 3).map(function (c) { return c.note || "（未命名）"; }).join("、");
-    var more = missing.length > 3 ? " 等" : "";
-    recoveryText.textContent = "這台裝置上有 " + missing.length + " 筆本機備份的食譜目前沒有顯示（" + names + more + "），可能是儲存服務暫時的問題造成的。要救回嗎？";
-    recoveryBanner.hidden = false;
-    recoveryBanner.classList.add("show");
+    snapshot.cards.forEach(insertCardFromData);
+    refreshDerived();
   }
 
   recoveryRestoreBtn.addEventListener("click", function () {
