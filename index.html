@@ -1,0 +1,1577 @@
+<title>食譜收藏盒</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@1,600&family=Noto+Sans+TC:wght@400;500;600;700;800&family=Noto+Serif+TC:wght@700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #fbf3de;
+    --surface: #ffffff;
+    --surface-hover: #fff8e8;
+    --ink: #382c18;
+    --ink-muted: #8c7c5c;
+    --line: #f0e2b8;
+    --line-soft: #f5eac8;
+    --gold: #dfa23a;
+    --gold-deep: #b87f22;
+    --gold-soft: #fbeac0;
+    --herb: #4c8b5b;
+    --herb-soft: #e1f0de;
+    --coral: #c6483b;
+    --coral-soft: #f6e0da;
+    --clay: #a6462f;
+    --clay-soft: #f4e2dc;
+    --shadow: 0 1px 2px rgba(56, 44, 24, 0.07), 0 6px 16px rgba(56, 44, 24, 0.08);
+    --banner-want-bg: #e8ded0;
+    --banner-want-fg: #6b5d45;
+    --banner-done-bg: #d9e0d1;
+    --banner-done-fg: #52604a;
+    --banner-fav-bg: #c6483b;
+    --banner-fav-fg: #fdeeea;
+  }
+
+  /* This page always renders in the light palette above, regardless of
+     system/app dark mode — Sandy asked to force light mode for this page. */
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    background: var(--paper);
+    color: var(--ink);
+  }
+
+  body {
+    margin: 0;
+    font-family: "Noto Sans TC", -apple-system, "PingFang TC", "Microsoft JhengHei", sans-serif;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .card { transition: transform 0.15s ease, box-shadow 0.15s ease; }
+    .chip, .status-banner, .badge.cuisine { transition: background-color 0.12s ease, color 0.12s ease, border-color 0.12s ease; }
+    .chevron { transition: transform 0.15s ease; }
+  }
+
+  a { color: var(--gold-deep); }
+
+  .app {
+    max-width: 68rem;
+    margin: 0 auto;
+    padding: 1.25rem 1.25rem 4rem;
+  }
+
+  /* ---------- header ---------- */
+
+  .masthead {
+    padding: 1.6rem 0 1.1rem;
+  }
+
+  .masthead h1 {
+    font-family: "Noto Serif TC", "Noto Serif", serif;
+    font-weight: 900;
+    font-size: clamp(2.1rem, 1.55rem + 2.3vw, 3.1rem);
+    margin: 0;
+    letter-spacing: 0.05em;
+    text-wrap: balance;
+    color: var(--ink);
+  }
+
+  .masthead .caption {
+    margin: 0.3rem 0 0.6rem;
+    font-family: "EB Garamond", "Noto Serif TC", serif;
+    font-style: italic;
+    font-weight: 600;
+    font-size: 0.92rem;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--gold-deep);
+  }
+
+  .masthead .tagline {
+    margin: 0;
+    color: var(--ink-muted);
+    font-size: 0.95rem;
+  }
+
+  /* ---------- add form ---------- */
+
+  .add-card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 0.9rem;
+    box-shadow: var(--shadow);
+    padding: 1rem 1.1rem 1.1rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .add-card legend {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--gold-deep);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 0 0.2rem;
+  }
+
+  .add-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.6fr) minmax(0, 1.2fr) auto auto;
+    gap: 0.6rem;
+    margin-top: 0.55rem;
+  }
+
+  @media (max-width: 40rem) {
+    .add-grid { grid-template-columns: 1fr 1fr; }
+    .add-grid .field-url { grid-column: 1 / -1; }
+    .add-grid .add-btn { grid-column: 1 / -1; }
+  }
+
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    min-width: 0;
+  }
+
+  .field label {
+    font-size: 0.72rem;
+    color: var(--ink-muted);
+    letter-spacing: 0.03em;
+  }
+
+  input[type="url"], input[type="text"], select, textarea {
+    font: inherit;
+    color: var(--ink);
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 0.5rem;
+    padding: 0.5rem 0.6rem;
+    width: 100%;
+    min-width: 0;
+  }
+
+  textarea {
+    resize: vertical;
+    min-height: 2.4rem;
+    font-family: inherit;
+  }
+
+  .steps-field { margin-top: 0.6rem; }
+
+  input::placeholder, textarea::placeholder { color: var(--ink-muted); opacity: 0.85; }
+
+  input:focus-visible, select:focus-visible, button:focus-visible, a:focus-visible, [contenteditable]:focus-visible {
+    outline: 2px solid var(--gold);
+    outline-offset: 2px;
+  }
+
+  .detect-hint {
+    font-size: 0.72rem;
+    color: var(--ink-muted);
+    min-height: 1.1em;
+  }
+
+  .detect-hint b { color: var(--gold-deep); font-weight: 600; }
+
+  .add-btn {
+    align-self: end;
+    background: var(--gold);
+    color: #2c2415;
+    border: none;
+    border-radius: 0.5rem;
+    padding: 0.6rem 1.1rem;
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+    height: 2.35rem;
+  }
+
+  .add-btn:hover { filter: brightness(1.06); }
+  .add-btn:active { filter: brightness(0.95); }
+
+  /* ---------- toolbar ---------- */
+
+  .toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 0.7rem;
+    padding: 0.1rem 0.1rem 1rem;
+    border-bottom: 1px solid var(--line-soft);
+    margin-bottom: 1.4rem;
+  }
+
+  .search-field {
+    flex: 1 1 12rem;
+    min-width: 8rem;
+  }
+
+  .search-field input {
+    background: var(--surface);
+  }
+
+  .chip-group {
+    display: flex;
+    gap: 0.35rem;
+    flex-wrap: wrap;
+  }
+
+  .chip {
+    font: inherit;
+    font-size: 0.82rem;
+    background: var(--surface);
+    color: var(--ink-muted);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 0.32rem 0.75rem;
+    cursor: pointer;
+  }
+
+  .chip:hover { background: var(--surface-hover); }
+
+  .chip[aria-pressed="true"] {
+    background: var(--gold-soft);
+    border-color: var(--gold);
+    color: var(--gold-deep);
+    font-weight: 700;
+  }
+
+  .chip[data-status-filter="想煮"][aria-pressed="true"] {
+    background: var(--gold-soft); border-color: var(--gold); color: var(--gold-deep);
+  }
+  .chip[data-status-filter="已煮"][aria-pressed="true"] {
+    background: var(--herb-soft); border-color: var(--herb); color: var(--herb);
+  }
+  .chip[data-status-filter="最愛"][aria-pressed="true"] {
+    background: var(--coral-soft); border-color: var(--coral); color: var(--coral);
+  }
+
+  .cuisine-select {
+    background: var(--surface);
+    font-size: 0.85rem;
+    padding: 0.4rem 0.55rem;
+  }
+
+  .summary {
+    margin-left: auto;
+    font-size: 0.8rem;
+    color: var(--ink-muted);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  .summary b { color: var(--ink); font-weight: 700; }
+
+  /* ---------- cuisine sections ---------- */
+
+  .cuisine-section { margin-bottom: 1.9rem; }
+  .cuisine-section[data-local-hidden="true"] { display: none; }
+
+  .cuisine-heading {
+    display: flex;
+    align-items: baseline;
+    gap: 0.4rem;
+    font-family: "Noto Serif TC", serif;
+    font-weight: 700;
+    font-size: 1.08rem;
+    color: var(--gold-deep);
+    margin: 0 0 0.7rem;
+    padding-bottom: 0.4rem;
+    border-bottom: 2px solid var(--line);
+    letter-spacing: 0.05em;
+  }
+
+  .cuisine-count {
+    font-family: "Noto Sans TC", sans-serif;
+    font-weight: 400;
+    font-size: 0.78rem;
+    color: var(--ink-muted);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(15.5rem, 1fr));
+    gap: 1rem;
+  }
+
+  /* ---------- cards ---------- */
+
+  .card {
+    position: relative;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 0.9rem;
+    overflow: hidden;
+    box-shadow: var(--shadow);
+    display: flex;
+    flex-direction: column;
+  }
+
+  .card[data-local-hidden="true"] { display: none; }
+
+  /* -- prominent status banner (replaces small pill; this IS the status control) -- */
+
+  .status-banner {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    width: 100%;
+    border: none;
+    cursor: pointer;
+    font: inherit;
+    font-weight: 800;
+    font-size: 0.9rem;
+    letter-spacing: 0.03em;
+    padding: 0.6rem 0.5rem;
+    flex: 0 0 auto;
+  }
+
+  .status-banner[data-status="想煮"] { background: var(--banner-want-bg); color: var(--banner-want-fg); }
+  .status-banner[data-status="已煮"] { background: var(--banner-done-bg); color: var(--banner-done-fg); }
+  .status-banner[data-status="最愛"] { background: var(--banner-fav-bg); color: var(--banner-fav-fg); }
+
+  .card-body {
+    padding: 0.8rem 0.9rem 0.85rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    flex: 1;
+  }
+
+  .card-top {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    align-items: center;
+  }
+
+  .badge {
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    padding: 0.2rem 0.5rem;
+    border-radius: 0.3rem;
+    border: 1px solid var(--line);
+    color: var(--ink-muted);
+    background: var(--paper);
+  }
+
+  .badge.platform { font-family: "Noto Sans TC", sans-serif; }
+
+  .badge.cuisine {
+    cursor: pointer;
+    font: inherit;
+    font-weight: 700;
+    appearance: none;
+    -webkit-appearance: none;
+  }
+
+  .badge.cuisine:hover { background: var(--surface-hover); }
+
+  .added {
+    font-size: 0.68rem;
+    color: var(--ink-muted);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .del-btn {
+    margin-left: auto;
+    background: none;
+    border: none;
+    color: var(--ink-muted);
+    font-size: 0.95rem;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0.15rem 0.3rem;
+    border-radius: 0.3rem;
+  }
+
+  .del-btn:hover { color: var(--clay); background: var(--clay-soft); }
+
+  .note {
+    margin: 0;
+    font-family: "Noto Sans TC", sans-serif;
+    font-weight: 700;
+    font-size: 1.02rem;
+    line-height: 1.45;
+  }
+
+  .note.placeholder { color: var(--ink-muted); font-weight: 400; font-style: italic; }
+
+  .note-sub {
+    margin: 0.15rem 0 0;
+    font-family: "Noto Sans TC", sans-serif;
+    font-weight: 400;
+    font-size: 0.8rem;
+    color: var(--ink-muted);
+    line-height: 1.4;
+  }
+
+  .note-sub[contenteditable] {
+    cursor: text;
+    border-radius: 0.35rem;
+    outline: none;
+  }
+
+  .note[contenteditable], .ingredients[contenteditable], .step-text[contenteditable] {
+    cursor: text;
+    border-radius: 0.35rem;
+    outline: none;
+  }
+
+  .note:focus, .ingredients:focus, .step-text:focus {
+    background: var(--gold-soft);
+    box-shadow: 0 0 0 2px var(--gold);
+  }
+
+  /* -- collapsible ingredients/steps -- */
+
+  .steps-toggle { margin: 0; }
+
+  .steps-toggle summary {
+    list-style: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--gold-deep);
+    padding: 0.15rem 0;
+    user-select: none;
+  }
+
+  .steps-toggle summary::-webkit-details-marker { display: none; }
+
+  .steps-toggle summary:hover { color: var(--ink); }
+
+  .chevron {
+    display: inline-block;
+    transform: rotate(-90deg);
+    font-size: 0.7em;
+  }
+
+  .steps-toggle[open] > summary .chevron { transform: rotate(0deg); }
+
+  .recipe-detail {
+    margin-top: 0.4rem;
+    padding-top: 0.45rem;
+    border-top: 1px dashed var(--line-soft);
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+  }
+
+  .detail-label {
+    margin: 0 0 0.3rem;
+    font-size: 0.7rem;
+    font-weight: 800;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--gold-deep);
+  }
+
+  .ingredients {
+    font-size: 0.85rem;
+    color: var(--ink);
+    line-height: 1.6;
+  }
+
+  .ingredients.placeholder, .step-text.placeholder { color: var(--ink-muted); font-style: italic; }
+
+  .steps-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.32rem;
+  }
+
+  /* Each step is its own flex row (number + text) rather than one blob of
+     text with embedded newlines — this is what gives a wrapped, over-long
+     step a proper hanging indent (continuation lines land under the text,
+     not back under the number), which plain CSS text-indent can't do
+     across manual line breaks in this browser. */
+  .step-row {
+    display: flex;
+    align-items: baseline;
+    gap: 0.45rem;
+  }
+
+  .step-num {
+    flex: 0 0 auto;
+    min-width: 1.3em;
+    font-variant-numeric: tabular-nums;
+    font-weight: 700;
+    color: var(--gold-deep);
+    font-size: 0.85rem;
+  }
+
+  .step-text {
+    flex: 1 1 auto;
+    min-width: 0;
+    font-size: 0.85rem;
+    color: var(--ink-muted);
+    line-height: 1.6;
+  }
+
+  .card-footer {
+    display: flex;
+    align-items: center;
+    margin-top: auto;
+    padding-top: 0.5rem;
+  }
+
+  .link-out {
+    font-size: 0.82rem;
+    font-weight: 700;
+    text-decoration: none;
+    border-bottom: 1px solid currentColor;
+  }
+
+  /* ---------- empty state ---------- */
+
+  .empty-state {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: var(--ink-muted);
+  }
+
+  .empty-state .big {
+    font-family: "Noto Serif TC", serif;
+    font-size: 1.3rem;
+    color: var(--ink);
+    margin-bottom: 0.4rem;
+  }
+
+  /* ---------- readonly banner ---------- */
+
+  .readonly-banner {
+    display: none;
+    background: var(--coral-soft);
+    color: var(--coral);
+    border: 1px solid var(--coral);
+    border-radius: 0.6rem;
+    padding: 0.6rem 0.9rem;
+    font-size: 0.85rem;
+    margin-bottom: 1rem;
+  }
+
+  .readonly-banner.show { display: block; }
+
+  .recovery-banner {
+    display: none;
+    background: var(--herb-soft);
+    color: var(--herb);
+    border: 1px solid var(--herb);
+    border-radius: 0.6rem;
+    padding: 0.6rem 0.9rem;
+    font-size: 0.85rem;
+    margin-bottom: 1rem;
+    align-items: center;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+  }
+
+  .recovery-banner.show { display: flex; }
+
+  .recovery-banner button {
+    font-size: 0.78rem;
+    font-weight: 700;
+    padding: 0.3rem 0.65rem;
+    border-radius: 999px;
+    border: 1px solid var(--herb);
+    background: var(--surface);
+    color: var(--herb);
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  .recovery-banner button:hover { background: var(--herb-soft); }
+
+  .backup-actions { display: flex; gap: 0.4rem; }
+
+  .backup-btn {
+    font-size: 0.78rem;
+    font-weight: 600;
+    padding: 0.35rem 0.7rem;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    background: var(--surface);
+    color: var(--ink-muted);
+    cursor: pointer;
+  }
+
+  .backup-btn:hover { background: var(--surface-hover); color: var(--ink); }
+
+  artifact-local { display: contents; }
+</style>
+
+<div class="app">
+
+  <artifact-local>
+    <div class="readonly-banner" id="readonly-banner" role="status">
+      這個頁面目前無法儲存變更，新增或修改只會顯示在這個畫面上。
+    </div>
+  </artifact-local>
+
+  <artifact-local>
+    <div class="recovery-banner" id="recovery-banner" role="status" hidden>
+      <span id="recovery-text"></span>
+      <button type="button" id="recovery-restore-btn">救回</button>
+      <button type="button" id="recovery-dismiss-btn">不用了</button>
+    </div>
+  </artifact-local>
+
+  <header class="masthead">
+    <h1>食譜收藏盒</h1>
+    <p class="caption">Recipe Collection</p>
+  </header>
+
+  <artifact-local>
+    <form class="add-card" id="add-form">
+      <legend>新增一筆收藏</legend>
+      <div class="add-grid">
+        <div class="field field-url">
+          <label for="in-url">連結（選填）</label>
+          <input type="url" id="in-url" name="url" placeholder="貼上食譜或影片連結，純手記可留空">
+          <div class="detect-hint" id="detect-hint" aria-live="polite"></div>
+        </div>
+        <div class="field">
+          <label for="in-note">料理名稱</label>
+          <input type="text" id="in-note" name="note" placeholder="想煮的原因、重點提醒…" maxlength="120">
+        </div>
+        <div class="field">
+          <label for="in-cuisine">料理類型</label>
+          <select id="in-cuisine" name="cuisine">
+            <option>正餐</option>
+            <option>小菜/小食</option>
+            <option>湯品</option>
+            <option>烘焙/甜點</option>
+          </select>
+        </div>
+        <button type="submit" class="add-btn">＋ 加入收藏</button>
+      </div>
+      <div class="field steps-field">
+        <label for="in-steps">作法（選填，可多行，之後可以再補食材）</label>
+        <textarea id="in-steps" name="steps" rows="2" placeholder="一行一個步驟，之後可以直接點卡片內文修改"></textarea>
+      </div>
+    </form>
+  </artifact-local>
+
+  <artifact-local>
+    <div class="toolbar">
+      <div class="field search-field">
+        <input type="text" id="search-input" placeholder="搜尋名稱、食材或作法…" aria-label="搜尋收藏">
+      </div>
+      <div class="chip-group" id="status-filter" role="group" aria-label="依煮理狀態篩選">
+        <button type="button" class="chip" data-status-filter="all" aria-pressed="true">全部</button>
+        <button type="button" class="chip" data-status-filter="想煮" aria-pressed="false">想煮</button>
+        <button type="button" class="chip" data-status-filter="已煮" aria-pressed="false">已煮</button>
+        <button type="button" class="chip" data-status-filter="最愛" aria-pressed="false">最愛</button>
+      </div>
+      <select class="cuisine-select" id="cuisine-filter" aria-label="依料理類型篩選">
+        <option value="all">全部類型</option>
+        <option>正餐</option>
+        <option>小菜/小食</option>
+        <option>湯品</option>
+        <option>烘焙/甜點</option>
+      </select>
+      <div class="summary" id="summary" aria-live="polite"></div>
+      <div class="backup-actions">
+        <button type="button" class="backup-btn" id="export-btn">匯出食譜</button>
+        <button type="button" class="backup-btn" id="import-btn">匯入食譜</button>
+        <input type="file" id="import-file" accept="application/json,.json" hidden>
+      </div>
+    </div>
+  </artifact-local>
+
+  <main id="recipe-list">
+    <section class="cuisine-section" data-cuisine-section="正餐">
+      <h2 class="cuisine-heading">正餐<span class="cuisine-count" data-count-for="正餐"></span></h2>
+      <div class="grid" data-cuisine-grid="正餐">
+<article class="card" data-status="想煮" data-cuisine="正餐" data-platform="手記" data-url=""><button type="button" class="status-banner" data-status="想煮">想煮</button><div class="card-body"><div class="card-top"><span class="badge platform">手記</span><button type="button" class="badge cuisine">正餐</button><button type="button" class="del-btn" aria-label="刪除這筆收藏">✕</button></div><p class="note" contenteditable="true" spellcheck="false">番茄雞蛋麵🍅</p><p class="note-sub" contenteditable="true" spellcheck="false">詹姆士</p><details class="steps-toggle"><summary><span class="chevron">▾</span> 食材／作法</summary><div class="recipe-detail"><div><h3 class="detail-label">食材</h3><div class="ingredients" contenteditable="true" spellcheck="false">牛番茄、蛋 2顆、麵、番茄醬、醬油、薑末、香油、胡椒</div></div><div><h3 class="detail-label">做法</h3><div class="steps-list"><div class="step-row"><span class="step-num">1.</span><div class="step-text" contenteditable="true" spellcheck="false">牛蕃茄切1公分片</div></div><div class="step-row"><span class="step-num">2.</span><div class="step-text" contenteditable="true" spellcheck="false">香油炒蛋盛起</div></div><div class="step-row"><span class="step-num">3.</span><div class="step-text" contenteditable="true" spellcheck="false">炒蕃茄+香油+薑末</div></div><div class="step-row"><span class="step-num">4.</span><div class="step-text" contenteditable="true" spellcheck="false">炒微軟後加番茄醬、醬油</div></div><div class="step-row"><span class="step-num">5.</span><div class="step-text" contenteditable="true" spellcheck="false">加滾水、蛋，加少許胡椒、湯</div></div><div class="step-row"><span class="step-num">6.</span><div class="step-text" contenteditable="true" spellcheck="false">下麵（分開煮也可）</div></div><div class="step-row"><span class="step-num">7.</span><div class="step-text" contenteditable="true" spellcheck="false">加入另一顆蛋液</div></div></div></div></div></details></div></article>
+<article class="card" data-status="想煮" data-cuisine="正餐" data-platform="手記" data-url=""><button type="button" class="status-banner" data-status="想煮">想煮</button><div class="card-body"><div class="card-top"><span class="badge platform">手記</span><button type="button" class="badge cuisine">正餐</button><button type="button" class="del-btn" aria-label="刪除這筆收藏">✕</button></div><p class="note" contenteditable="true" spellcheck="false">菠菜鮪魚蛋</p><p class="note-sub" contenteditable="true" spellcheck="false">Meg</p><details class="steps-toggle"><summary><span class="chevron">▾</span> 食材／作法</summary><div class="recipe-detail"><div><h3 class="detail-label">食材</h3><div class="ingredients placeholder" contenteditable="true" spellcheck="false">點這裡新增食材…</div></div><div><h3 class="detail-label">做法</h3><div class="steps-list"><div class="step-row"><span class="step-num">1.</span><div class="step-text placeholder" contenteditable="true" spellcheck="false">點這裡新增第一個步驟…</div></div></div></div></div></details></div></article>
+<article class="card" data-status="已煮" data-cuisine="正餐" data-platform="手記" data-url=""><button type="button" class="status-banner" data-status="已煮">已煮</button><div class="card-body"><div class="card-top"><span class="badge platform">手記</span><button type="button" class="badge cuisine">正餐</button><button type="button" class="del-btn" aria-label="刪除這筆收藏">✕</button></div><p class="note" contenteditable="true" spellcheck="false">雞肉菠菜燉飯</p><details class="steps-toggle"><summary><span class="chevron">▾</span> 食材／作法</summary><div class="recipe-detail"><div><h3 class="detail-label">食材</h3><div class="ingredients" contenteditable="true" spellcheck="false">雞里肌肉、菠菜、洋蔥、牛奶、白飯、奶油</div></div><div><h3 class="detail-label">做法</h3><div class="steps-list"><div class="step-row"><span class="step-num">1.</span><div class="step-text" contenteditable="true" spellcheck="false">雞肉醃過後煎至半熟</div></div><div class="step-row"><span class="step-num">2.</span><div class="step-text" contenteditable="true" spellcheck="false">下奶油、洋蔥炒香，加入菠菜</div></div><div class="step-row"><span class="step-num">3.</span><div class="step-text" contenteditable="true" spellcheck="false">加牛奶燉煮、加飯，最後加入雞肉</div></div></div></div></div></details></div></article>
+<article class="card" data-status="已煮" data-cuisine="正餐" data-platform="手記" data-url=""><button type="button" class="status-banner" data-status="已煮">已煮</button><div class="card-body"><div class="card-top"><span class="badge platform">手記</span><button type="button" class="badge cuisine">正餐</button><button type="button" class="del-btn" aria-label="刪除這筆收藏">✕</button></div><p class="note" contenteditable="true" spellcheck="false">上海菜飯</p><details class="steps-toggle"><summary><span class="chevron">▾</span> 食材／作法</summary><div class="recipe-detail"><div><h3 class="detail-label">食材</h3><div class="ingredients" contenteditable="true" spellcheck="false">白飯、青江菜、五花肉、蛋、蒜、蔥</div></div><div><h3 class="detail-label">做法</h3><div class="steps-list"><div class="step-row"><span class="step-num">1.</span><div class="step-text" contenteditable="true" spellcheck="false">青菜加點鹽醃，五花肉切小條</div></div><div class="step-row"><span class="step-num">2.</span><div class="step-text" contenteditable="true" spellcheck="false">五花肉下鍋逼出油，煎至微焦脆盛出</div></div><div class="step-row"><span class="step-num">3.</span><div class="step-text" contenteditable="true" spellcheck="false">炒蛋，加一點蒜、蔥白</div></div><div class="step-row"><span class="step-num">4.</span><div class="step-text" contenteditable="true" spellcheck="false">菜擠汁後下鍋，炒乾一點加肉、蒜</div></div><div class="step-row"><span class="step-num">5.</span><div class="step-text" contenteditable="true" spellcheck="false">下飯，不夠再加鹽、胡椒，收乾盛起</div></div></div></div></div></details></div></article>
+<article class="card" data-status="想煮" data-cuisine="正餐" data-platform="手記" data-url=""><button type="button" class="status-banner" data-status="想煮">想煮</button><div class="card-body"><div class="card-top"><span class="badge platform">手記</span><button type="button" class="badge cuisine">正餐</button><button type="button" class="del-btn" aria-label="刪除這筆收藏">✕</button></div><p class="note" contenteditable="true" spellcheck="false">橄欖油蒜蝦筆管麵</p><details class="steps-toggle"><summary><span class="chevron">▾</span> 食材／作法</summary><div class="recipe-detail"><div><h3 class="detail-label">食材</h3><div class="ingredients" contenteditable="true" spellcheck="false">蝦（連頭殼）、蒜末、洋蔥、筆管麵、橄欖油、鹽巴、胡椒粉</div></div><div><h3 class="detail-label">做法</h3><div class="steps-list"><div class="step-row"><span class="step-num">1.</span><div class="step-text" contenteditable="true" spellcheck="false">下油爆香蝦頭/蝦殼，取出蝦頭/蝦殼</div></div><div class="step-row"><span class="step-num">2.</span><div class="step-text" contenteditable="true" spellcheck="false">加入蒜末、洋蔥爆香</div></div><div class="step-row"><span class="step-num">3.</span><div class="step-text" contenteditable="true" spellcheck="false">加入蝦子翻炒</div></div><div class="step-row"><span class="step-num">4.</span><div class="step-text" contenteditable="true" spellcheck="false">蝦子快熟時加入已經川燙好的筆管麵</div></div><div class="step-row"><span class="step-num">5.</span><div class="step-text" contenteditable="true" spellcheck="false">加入一勺煮麵水</div></div><div class="step-row"><span class="step-num">6.</span><div class="step-text" contenteditable="true" spellcheck="false">拌炒調味（鹽巴、胡椒粉）</div></div></div></div></div></details></div></article>
+<article class="card" data-status="已煮" data-cuisine="正餐" data-platform="手記" data-url=""><button type="button" class="status-banner" data-status="已煮">已煮</button><div class="card-body"><div class="card-top"><span class="badge platform">手記</span><button type="button" class="badge cuisine">正餐</button><button type="button" class="del-btn" aria-label="刪除這筆收藏">✕</button></div><p class="note" contenteditable="true" spellcheck="false">烏龍麵</p><details class="steps-toggle"><summary><span class="chevron">▾</span> 食材／作法</summary><div class="recipe-detail"><div><h3 class="detail-label">食材</h3><div class="ingredients" contenteditable="true" spellcheck="false">冷凍烏龍麵、竹輪、豬五花、昆布醬油（湯底）、蛋、蔥花、（可加香菇、青菜等）</div></div><div><h3 class="detail-label">做法</h3><div class="steps-list"><div class="step-row"><span class="step-num">1.</span><div class="step-text placeholder" contenteditable="true" spellcheck="false">點這裡新增第一個步驟…</div></div></div></div></div></details></div></article>
+<article class="card" data-status="已煮" data-cuisine="正餐" data-platform="手記" data-url=""><button type="button" class="status-banner" data-status="已煮">已煮</button><div class="card-body"><div class="card-top"><span class="badge platform">手記</span><button type="button" class="badge cuisine">正餐</button><button type="button" class="del-btn" aria-label="刪除這筆收藏">✕</button></div><p class="note" contenteditable="true" spellcheck="false">隔夜燕麥粥/奇亞籽布丁</p><details class="steps-toggle"><summary><span class="chevron">▾</span> 食材／作法</summary><div class="recipe-detail"><div><h3 class="detail-label">食材</h3><div class="ingredients" contenteditable="true" spellcheck="false">燕麥 50g、奇亞籽 10g、水／牛奶／豆漿 100g、優格或蜂蜜（增加甜味）、水果、堅果（配料）</div></div><div><h3 class="detail-label">做法</h3><div class="steps-list"><div class="step-row"><span class="step-num">1.</span><div class="step-text" contenteditable="true" spellcheck="false">混合燕麥、奇亞籽與水（或牛奶/豆漿）</div></div><div class="step-row"><span class="step-num">2.</span><div class="step-text" contenteditable="true" spellcheck="false">冷藏放置4-7小時</div></div><div class="step-row"><span class="step-num">3.</span><div class="step-text" contenteditable="true" spellcheck="false">加入優格或蜂蜜增加甜味</div></div><div class="step-row"><span class="step-num">4.</span><div class="step-text" contenteditable="true" spellcheck="false">撒上水果、堅果享用</div></div></div></div></div></details></div></article>
+<article class="card" data-status="已煮" data-cuisine="正餐" data-platform="手記" data-url=""><button type="button" class="status-banner" data-status="已煮">已煮</button><div class="card-body"><div class="card-top"><span class="badge platform">手記</span><button type="button" class="badge cuisine">正餐</button><button type="button" class="del-btn" aria-label="刪除這筆收藏">✕</button></div><p class="note" contenteditable="true" spellcheck="false">燕麥粥</p><p class="note-sub" contenteditable="true" spellcheck="false">鹹的</p><details class="steps-toggle"><summary><span class="chevron">▾</span> 食材／作法</summary><div class="recipe-detail"><div><h3 class="detail-label">食材</h3><div class="ingredients placeholder" contenteditable="true" spellcheck="false">點這裡新增食材…</div></div><div><h3 class="detail-label">做法</h3><div class="steps-list"><div class="step-row"><span class="step-num">1.</span><div class="step-text placeholder" contenteditable="true" spellcheck="false">點這裡新增第一個步驟…</div></div></div></div></div></details></div></article>
+<article class="card" data-status="已煮" data-cuisine="正餐" data-platform="手記" data-url=""><button type="button" class="status-banner" data-status="已煮">已煮</button><div class="card-body"><div class="card-top"><span class="badge platform">手記</span><button type="button" class="badge cuisine">正餐</button><button type="button" class="del-btn" aria-label="刪除這筆收藏">✕</button></div><p class="note" contenteditable="true" spellcheck="false">豆腐鮮蝦煲</p><details class="steps-toggle"><summary><span class="chevron">▾</span> 食材／作法</summary><div class="recipe-detail"><div><h3 class="detail-label">食材</h3><div class="ingredients" contenteditable="true" spellcheck="false">豆腐、鮮蝦、金針菇或冬粉、蒜頭、蔥、辣椒、蠔油 2大匙、醬油 2大匙、鹽巴、白胡椒</div></div><div><h3 class="detail-label">做法</h3><div class="steps-list"><div class="step-row"><span class="step-num">1.</span><div class="step-text" contenteditable="true" spellcheck="false">處理蝦子（蝦頭切開、切掉蝦腳、開背去腸泥）</div></div><div class="step-row"><span class="step-num">2.</span><div class="step-text" contenteditable="true" spellcheck="false">加油、炒蝦頭至蝦膏出來</div></div><div class="step-row"><span class="step-num">3.</span><div class="step-text" contenteditable="true" spellcheck="false">放豆腐、蝦煎至半熟後拿起</div></div><div class="step-row"><span class="step-num">4.</span><div class="step-text" contenteditable="true" spellcheck="false">剩下的蝦頭熬蝦湯（10分鐘）</div></div><div class="step-row"><span class="step-num">5.</span><div class="step-text" contenteditable="true" spellcheck="false">倒出高湯備用</div></div><div class="step-row"><span class="step-num">6.</span><div class="step-text" contenteditable="true" spellcheck="false">重新加油、蒜頭、蔥末爆香</div></div><div class="step-row"><span class="step-num">7.</span><div class="step-text" contenteditable="true" spellcheck="false">關火加入金針菇/粉絲，鋪上豆腐</div></div><div class="step-row"><span class="step-num">8.</span><div class="step-text" contenteditable="true" spellcheck="false">開火加入蠔油2大匙、醬油2大匙（醬汁可先加一些湯攪勻）</div></div><div class="step-row"><span class="step-num">9.</span><div class="step-text" contenteditable="true" spellcheck="false">高湯300g分次加入</div></div><div class="step-row"><span class="step-num">10.</span><div class="step-text" contenteditable="true" spellcheck="false">煮滾後轉小火5分鐘</div></div><div class="step-row"><span class="step-num">11.</span><div class="step-text" contenteditable="true" spellcheck="false">加入蝦子、辣椒、鹽巴、白胡椒</div></div><div class="step-row"><span class="step-num">12.</span><div class="step-text" contenteditable="true" spellcheck="false">燜煮1分鐘後，加入蔥花</div></div></div></div></div></details></div></article>
+<article class="card" data-status="已煮" data-cuisine="正餐" data-platform="手記" data-url=""><button type="button" class="status-banner" data-status="已煮">已煮</button><div class="card-body"><div class="card-top"><span class="badge platform">手記</span><button type="button" class="badge cuisine">正餐</button><button type="button" class="del-btn" aria-label="刪除這筆收藏">✕</button></div><p class="note" contenteditable="true" spellcheck="false">蜂蜜烤雞腿</p><p class="note-sub" contenteditable="true" spellcheck="false">約7隻雞小腿</p><details class="steps-toggle"><summary><span class="chevron">▾</span> 食材／作法</summary><div class="recipe-detail"><div><h3 class="detail-label">食材</h3><div class="ingredients" contenteditable="true" spellcheck="false">雞小腿（約7隻）、蒜頭、醬油 2大匙、油 1小匙、蜂蜜 1大匙、黑胡椒 少許</div></div><div><h3 class="detail-label">做法</h3><div class="steps-list"><div class="step-row"><span class="step-num">1.</span><div class="step-text" contenteditable="true" spellcheck="false">用調味料醃雞腿肉2-3小時</div></div><div class="step-row"><span class="step-num">2.</span><div class="step-text" contenteditable="true" spellcheck="false">烤箱烤14分鐘，時間剩一半時翻面</div></div></div></div></div></details></div></article>
+<article class="card" data-status="已煮" data-cuisine="正餐" data-platform="手記" data-url=""><button type="button" class="status-banner" data-status="已煮">已煮</button><div class="card-body"><div class="card-top"><span class="badge platform">手記</span><button type="button" class="badge cuisine">正餐</button><button type="button" class="del-btn" aria-label="刪除這筆收藏">✕</button></div><p class="note" contenteditable="true" spellcheck="false">親子丼</p><details class="steps-toggle"><summary><span class="chevron">▾</span> 食材／作法</summary><div class="recipe-detail"><div><h3 class="detail-label">食材</h3><div class="ingredients" contenteditable="true" spellcheck="false">洋蔥、香菇、雞腿肉、蛋 2顆、醬油、柴魚醬油、味醂、蔥花</div></div><div><h3 class="detail-label">做法</h3><div class="steps-list"><div class="step-row"><span class="step-num">1.</span><div class="step-text" contenteditable="true" spellcheck="false">洋蔥絲、香菇片、雞腿切塊放入鍋中</div></div><div class="step-row"><span class="step-num">2.</span><div class="step-text" contenteditable="true" spellcheck="false">調醬汁：醬油、柴魚醬油、味醂</div></div><div class="step-row"><span class="step-num">3.</span><div class="step-text" contenteditable="true" spellcheck="false">將醬汁倒入，再加水至九分滿</div></div><div class="step-row"><span class="step-num">4.</span><div class="step-text" contenteditable="true" spellcheck="false">開火煮滾</div></div><div class="step-row"><span class="step-num">5.</span><div class="step-text" contenteditable="true" spellcheck="false">打兩顆蛋（不要完全打散）</div></div><div class="step-row"><span class="step-num">6.</span><div class="step-text" contenteditable="true" spellcheck="false">筷子垂直立放在碗緣，倒入蛋液（讓蛋液隨筷子滴入鍋中）</div></div><div class="step-row"><span class="step-num">7.</span><div class="step-text" contenteditable="true" spellcheck="false">先倒一半蛋液（讓洋蔥香菇雞肉結成一塊）</div></div><div class="step-row"><span class="step-num">8.</span><div class="step-text" contenteditable="true" spellcheck="false">蓋上煮20秒</div></div><div class="step-row"><span class="step-num">9.</span><div class="step-text" contenteditable="true" spellcheck="false">開蓋倒入另一半蛋液（製造滑嫩感）</div></div><div class="step-row"><span class="step-num">10.</span><div class="step-text" contenteditable="true" spellcheck="false">蓋上煮10秒，加蔥花，完成！</div></div></div></div></div></details></div></article>
+<article class="card" data-status="想煮" data-cuisine="正餐" data-platform="Instagram" data-url="https://www.instagram.com/reels/DcKphsLTD25/"><button type="button" class="status-banner" data-status="想煮">想煮</button><div class="card-body"><div class="card-top"><span class="badge platform">Instagram</span><button type="button" class="badge cuisine">正餐</button><button type="button" class="del-btn" aria-label="刪除這筆收藏">✕</button></div><p class="note" contenteditable="true" spellcheck="false">昆布鹽義大利麵</p><p class="note-sub" contenteditable="true" spellcheck="false">電鍋版</p><details class="steps-toggle"><summary><span class="chevron">▾</span> 食材／作法</summary><div class="recipe-detail"><div><h3 class="detail-label">食材</h3><div class="ingredients" contenteditable="true" spellcheck="false">義大利麵 70克、鴻禧菇 半包、蒜末 1小匙、鹽昆布 適量、醬油 1小匙、奶油 8克、冷水 130ml、生食級蛋黃 1顆（擺盤裝飾可再加一顆，可加可不加）</div></div><div><h3 class="detail-label">做法</h3><div class="steps-list"><div class="step-row"><span class="step-num">1.</span><div class="step-text" contenteditable="true" spellcheck="false">電鍋內鍋放入義大利麵、鴻禧菇、蒜末、鹽昆布、醬油、奶油、冷水130ml，確定麵體都有浸泡到水分</div></div><div class="step-row"><span class="step-num">2.</span><div class="step-text" contenteditable="true" spellcheck="false">外鍋加水半個米杯（90ml），按下加熱鈕，計時14分鐘後取出（麵量較多請自行增加水量與加熱時間；用鴻禧菇加熱會出水，若不加菇請自行增加水量）</div></div><div class="step-row"><span class="step-num">3.</span><div class="step-text" contenteditable="true" spellcheck="false">出鍋後要「馬上」趁熱快速拌入生食級蛋黃，讓醬汁乳化</div></div><div class="step-row"><span class="step-num">4.</span><div class="step-text" contenteditable="true" spellcheck="false">拌勻後試味道，不夠可再加鹽昆布調整鹹淡，即可擺盤（可加另一顆生食級蛋黃裝飾）</div></div></div></div></div></details><div class="card-footer"><a class="link-out" href="https://www.instagram.com/reels/DcKphsLTD25/" target="_blank" rel="noopener noreferrer">開啟連結 ↗</a></div></div></article>
+      </div>
+    </section>
+    <section class="cuisine-section" data-cuisine-section="小菜/小食">
+      <h2 class="cuisine-heading">小菜／小食<span class="cuisine-count" data-count-for="小菜/小食"></span></h2>
+      <div class="grid" data-cuisine-grid="小菜/小食">
+<article class="card" data-status="想煮" data-cuisine="小菜/小食" data-platform="手記" data-url=""><button type="button" class="status-banner" data-status="想煮">想煮</button><div class="card-body"><div class="card-top"><span class="badge platform">手記</span><button type="button" class="badge cuisine">小菜/小食</button><button type="button" class="del-btn" aria-label="刪除這筆收藏">✕</button></div><p class="note" contenteditable="true" spellcheck="false">剝皮辣椒炒肉片</p><details class="steps-toggle"><summary><span class="chevron">▾</span> 食材／作法</summary><div class="recipe-detail"><div><h3 class="detail-label">食材</h3><div class="ingredients placeholder" contenteditable="true" spellcheck="false">點這裡新增食材…</div></div><div><h3 class="detail-label">做法</h3><div class="steps-list"><div class="step-row"><span class="step-num">1.</span><div class="step-text placeholder" contenteditable="true" spellcheck="false">點這裡新增第一個步驟…</div></div></div></div></div></details></div></article>
+<article class="card" data-status="想煮" data-cuisine="小菜/小食" data-platform="手記" data-url=""><button type="button" class="status-banner" data-status="想煮">想煮</button><div class="card-body"><div class="card-top"><span class="badge platform">手記</span><button type="button" class="badge cuisine">小菜/小食</button><button type="button" class="del-btn" aria-label="刪除這筆收藏">✕</button></div><p class="note" contenteditable="true" spellcheck="false">剝皮辣椒蒸蛋</p><details class="steps-toggle"><summary><span class="chevron">▾</span> 食材／作法</summary><div class="recipe-detail"><div><h3 class="detail-label">食材</h3><div class="ingredients placeholder" contenteditable="true" spellcheck="false">點這裡新增食材…</div></div><div><h3 class="detail-label">做法</h3><div class="steps-list"><div class="step-row"><span class="step-num">1.</span><div class="step-text placeholder" contenteditable="true" spellcheck="false">點這裡新增第一個步驟…</div></div></div></div></div></details></div></article>
+<article class="card" data-status="想煮" data-cuisine="小菜/小食" data-platform="手記" data-url=""><button type="button" class="status-banner" data-status="想煮">想煮</button><div class="card-body"><div class="card-top"><span class="badge platform">手記</span><button type="button" class="badge cuisine">小菜/小食</button><button type="button" class="del-btn" aria-label="刪除這筆收藏">✕</button></div><p class="note" contenteditable="true" spellcheck="false">剝皮辣椒蒸肉</p><details class="steps-toggle"><summary><span class="chevron">▾</span> 食材／作法</summary><div class="recipe-detail"><div><h3 class="detail-label">食材</h3><div class="ingredients" contenteditable="true" spellcheck="false">絞肉、砂糖、日式醬油、水</div></div><div><h3 class="detail-label">做法</h3><div class="steps-list"><div class="step-row"><span class="step-num">1.</span><div class="step-text placeholder" contenteditable="true" spellcheck="false">點這裡新增第一個步驟…</div></div></div></div></div></details></div></article>
+<article class="card" data-status="已煮" data-cuisine="小菜/小食" data-platform="手記" data-url=""><button type="button" class="status-banner" data-status="已煮">已煮</button><div class="card-body"><div class="card-top"><span class="badge platform">手記</span><button type="button" class="badge cuisine">小菜/小食</button><button type="button" class="del-btn" aria-label="刪除這筆收藏">✕</button></div><p class="note" contenteditable="true" spellcheck="false">剝皮辣椒豬肉捲</p><details class="steps-toggle"><summary><span class="chevron">▾</span> 食材／作法</summary><div class="recipe-detail"><div><h3 class="detail-label">食材</h3><div class="ingredients" contenteditable="true" spellcheck="false">豬肉片、剝皮辣椒、金針菇、小黃瓜</div></div><div><h3 class="detail-label">做法</h3><div class="steps-list"><div class="step-row"><span class="step-num">1.</span><div class="step-text placeholder" contenteditable="true" spellcheck="false">點這裡新增第一個步驟…</div></div></div></div></div></details></div></article>
+<article class="card" data-status="想煮" data-cuisine="小菜/小食" data-platform="手記" data-url=""><button type="button" class="status-banner" data-status="想煮">想煮</button><div class="card-body"><div class="card-top"><span class="badge platform">手記</span><button type="button" class="badge cuisine">小菜/小食</button><button type="button" class="del-btn" aria-label="刪除這筆收藏">✕</button></div><p class="note" contenteditable="true" spellcheck="false">日式年糕</p><p class="note-sub" contenteditable="true" spellcheck="false">看愛料理</p><details class="steps-toggle"><summary><span class="chevron">▾</span> 食材／作法</summary><div class="recipe-detail"><div><h3 class="detail-label">食材</h3><div class="ingredients placeholder" contenteditable="true" spellcheck="false">點這裡新增食材…</div></div><div><h3 class="detail-label">做法</h3><div class="steps-list"><div class="step-row"><span class="step-num">1.</span><div class="step-text placeholder" contenteditable="true" spellcheck="false">點這裡新增第一個步驟…</div></div></div></div></div></details></div></article>
+<article class="card" data-status="想煮" data-cuisine="小菜/小食" data-platform="手記" data-url=""><button type="button" class="status-banner" data-status="想煮">想煮</button><div class="card-body"><div class="card-top"><span class="badge platform">手記</span><button type="button" class="badge cuisine">小菜/小食</button><button type="button" class="del-btn" aria-label="刪除這筆收藏">✕</button></div><p class="note" contenteditable="true" spellcheck="false">溏心蛋</p><details class="steps-toggle"><summary><span class="chevron">▾</span> 食材／作法</summary><div class="recipe-detail"><div><h3 class="detail-label">食材</h3><div class="ingredients" contenteditable="true" spellcheck="false">蛋、醬油、味醂、米酒、糖</div></div><div><h3 class="detail-label">做法</h3><div class="steps-list"><div class="step-row"><span class="step-num">1.</span><div class="step-text" contenteditable="true" spellcheck="false">半熟蛋煮好後放冰水，剝殼</div></div><div class="step-row"><span class="step-num">2.</span><div class="step-text" contenteditable="true" spellcheck="false">煮醬汁（醬油、味醂、米酒、糖）並浸泡入味</div></div></div></div></div></details></div></article>
+<article class="card" data-status="已煮" data-cuisine="小菜/小食" data-platform="手記" data-url=""><button type="button" class="status-banner" data-status="已煮">已煮</button><div class="card-body"><div class="card-top"><span class="badge platform">手記</span><button type="button" class="badge cuisine">小菜/小食</button><button type="button" class="del-btn" aria-label="刪除這筆收藏">✕</button></div><p class="note" contenteditable="true" spellcheck="false">地瓜糯米餅🍠</p><details class="steps-toggle"><summary><span class="chevron">▾</span> 食材／作法</summary><div class="recipe-detail"><div><h3 class="detail-label">食材</h3><div class="ingredients" contenteditable="true" spellcheck="false">地瓜 340g、糯米粉 200g</div></div><div><h3 class="detail-label">做法</h3><div class="steps-list"><div class="step-row"><span class="step-num">1.</span><div class="step-text" contenteditable="true" spellcheck="false">地瓜蒸熟，壓成泥</div></div><div class="step-row"><span class="step-num">2.</span><div class="step-text" contenteditable="true" spellcheck="false">加入糯米粉，揉成麵團</div></div><div class="step-row"><span class="step-num">3.</span><div class="step-text" contenteditable="true" spellcheck="false">分割、壓成小餅（不能太厚）</div></div><div class="step-row"><span class="step-num">4.</span><div class="step-text" contenteditable="true" spellcheck="false">煎至兩面金黃，餅會膨起來</div></div></div></div></div></details></div></article>
+<article class="card" data-status="想煮" data-cuisine="小菜/小食" data-platform="Instagram" data-url="https://www.instagram.com/reel/DcYuimqTEaj/?igsi=MWp0b3N6N2FncmRodg=="><button type="button" class="status-banner" data-status="想煮">想煮</button><div class="card-body"><div class="card-top"><span class="badge platform">Instagram</span><button type="button" class="badge cuisine">小菜/小食</button><button type="button" class="del-btn" aria-label="刪除這筆收藏">✕</button></div><p class="note" contenteditable="true" spellcheck="false">節瓜花枝餅</p><details class="steps-toggle"><summary><span class="chevron">▾</span> 食材／作法</summary><div class="recipe-detail"><div><h3 class="detail-label">食材</h3><div class="ingredients" contenteditable="true" spellcheck="false">櫛瓜（切絲）、花枝漿 1條、辣椒碎（可省略，增香）</div></div><div><h3 class="detail-label">做法</h3><div class="steps-list"><div class="step-row"><span class="step-num">1.</span><div class="step-text" contenteditable="true" spellcheck="false">擠出花枝漿到碗裡，和櫛瓜絲拌勻</div></div><div class="step-row"><span class="step-num">2.</span><div class="step-text" contenteditable="true" spellcheck="false">熱鍋下油，捏成餅狀煎至兩面金黃（撒一點辣椒碎更香）</div></div><div class="step-row"><span class="step-num">3.</span><div class="step-text" contenteditable="true" spellcheck="false">起鍋配飯吃，這次餅有點散開，下次要讓餅更「團結」一點</div></div></div></div></div></details><div class="card-footer"><a class="link-out" href="https://www.instagram.com/reel/DcYuimqTEaj/?igsi=MWp0b3N6N2FncmRodg==" target="_blank" rel="noopener noreferrer">開啟連結 ↗</a></div></div></article>
+<article class="card" data-status="想煮" data-cuisine="小菜/小食" data-platform="Facebook" data-url="https://www.facebook.com/reel/1610684674011862"><button type="button" class="status-banner" data-status="想煮">想煮</button><div class="card-body"><div class="card-top"><span class="badge platform">Facebook</span><button type="button" class="badge cuisine">小菜/小食</button><button type="button" class="del-btn" aria-label="刪除這筆收藏">✕</button></div><p class="note" contenteditable="true" spellcheck="false">涼拌昆布鹽秋葵</p><details class="steps-toggle"><summary><span class="chevron">▾</span> 食材／作法</summary><div class="recipe-detail"><div><h3 class="detail-label">食材</h3><div class="ingredients" contenteditable="true" spellcheck="false">秋葵 約10根（小根的）、金針菇、減鹽鹽昆布（份量看個人喜好）、醬油 1茶匙、香油 1茶匙、糖 半茶匙</div></div><div><h3 class="detail-label">做法</h3><div class="steps-list"><div class="step-row"><span class="step-num">1.</span><div class="step-text" contenteditable="true" spellcheck="false">秋葵、金針菇燙過後冰鎮一下瀝乾</div></div><div class="step-row"><span class="step-num">2.</span><div class="step-text" contenteditable="true" spellcheck="false">加入醬汁（醬油、香油、糖）和昆布鹽後攪拌均勻</div></div><div class="step-row"><span class="step-num">3.</span><div class="step-text" contenteditable="true" spellcheck="false">撒上白芝麻，冷藏後即完成</div></div></div></div></div></details><div class="card-footer"><a class="link-out" href="https://www.facebook.com/reel/1610684674011862" target="_blank" rel="noopener noreferrer">開啟連結 ↗</a></div></div></article>
+      </div>
+    </section>
+    <section class="cuisine-section" data-cuisine-section="湯品">
+      <h2 class="cuisine-heading">湯品<span class="cuisine-count" data-count-for="湯品"></span></h2>
+      <div class="grid" data-cuisine-grid="湯品">
+<article class="card" data-status="想煮" data-cuisine="湯品" data-platform="手記" data-url=""><button type="button" class="status-banner" data-status="想煮">想煮</button><div class="card-body"><div class="card-top"><span class="badge platform">手記</span><button type="button" class="badge cuisine">湯品</button><button type="button" class="del-btn" aria-label="刪除這筆收藏">✕</button></div><p class="note" contenteditable="true" spellcheck="false">山藥玉米湯</p><details class="steps-toggle"><summary><span class="chevron">▾</span> 食材／作法</summary><div class="recipe-detail"><div><h3 class="detail-label">食材</h3><div class="ingredients" contenteditable="true" spellcheck="false">豬絞肉、玉米粒、日本山藥、鹽、蔥末、水</div></div><div><h3 class="detail-label">做法</h3><div class="steps-list"><div class="step-row"><span class="step-num">1.</span><div class="step-text" contenteditable="true" spellcheck="false">熱油炒豬絞肉（玉米的1/3） 煨出肉汁</div></div><div class="step-row"><span class="step-num">2.</span><div class="step-text" contenteditable="true" spellcheck="false">放入玉米粒（不含玉米水）炒，水份減少後，加一點鹽巴，炒至無水份（肉、玉米微焦，才會有香氣）</div></div><div class="step-row"><span class="step-num">3.</span><div class="step-text" contenteditable="true" spellcheck="false">加水 煮滾5min</div></div><div class="step-row"><span class="step-num">4.</span><div class="step-text" contenteditable="true" spellcheck="false">日本山藥切圓片，放入塑膠袋敲碎（釋放黏液 讓湯濃稠 代替勾芡）</div></div><div class="step-row"><span class="step-num">5.</span><div class="step-text" contenteditable="true" spellcheck="false">加鹽、蔥末入湯</div></div><div class="step-row"><span class="step-num">6.</span><div class="step-text" contenteditable="true" spellcheck="false">盛起一碗湯+放上一塊山藥在中間</div></div></div></div></div></details></div></article>
+<article class="card" data-status="已煮" data-cuisine="湯品" data-platform="手記" data-url=""><button type="button" class="status-banner" data-status="已煮">已煮</button><div class="card-body"><div class="card-top"><span class="badge platform">手記</span><button type="button" class="badge cuisine">湯品</button><button type="button" class="del-btn" aria-label="刪除這筆收藏">✕</button></div><p class="note" contenteditable="true" spellcheck="false">剝皮辣椒雞湯</p><details class="steps-toggle"><summary><span class="chevron">▾</span> 食材／作法</summary><div class="recipe-detail"><div><h3 class="detail-label">食材</h3><div class="ingredients placeholder" contenteditable="true" spellcheck="false">點這裡新增食材…</div></div><div><h3 class="detail-label">做法</h3><div class="steps-list"><div class="step-row"><span class="step-num">1.</span><div class="step-text placeholder" contenteditable="true" spellcheck="false">點這裡新增第一個步驟…</div></div></div></div></div></details></div></article>
+      </div>
+    </section>
+    <section class="cuisine-section" data-cuisine-section="烘焙/甜點">
+      <h2 class="cuisine-heading">烘焙／甜點<span class="cuisine-count" data-count-for="烘焙/甜點"></span></h2>
+      <div class="grid" data-cuisine-grid="烘焙/甜點">
+<article class="card" data-status="已煮" data-cuisine="烘焙/甜點" data-platform="YouTube" data-url="https://youtu.be/HV5UFLep8UA"><button type="button" class="status-banner" data-status="已煮">已煮</button><div class="card-body"><div class="card-top"><span class="badge platform">YouTube</span><button type="button" class="badge cuisine">烘焙/甜點</button><button type="button" class="del-btn" aria-label="刪除這筆收藏">✕</button></div><p class="note" contenteditable="true" spellcheck="false">司康</p><details class="steps-toggle"><summary><span class="chevron">▾</span> 食材／作法</summary><div class="recipe-detail"><div><h3 class="detail-label">食材</h3><div class="ingredients placeholder" contenteditable="true" spellcheck="false">點這裡新增食材…</div></div><div><h3 class="detail-label">做法</h3><div class="steps-list"><div class="step-row"><span class="step-num">1.</span><div class="step-text placeholder" contenteditable="true" spellcheck="false">點這裡新增第一個步驟…</div></div></div></div></div></details><div class="card-footer"><a class="link-out" href="https://youtu.be/HV5UFLep8UA" target="_blank" rel="noopener noreferrer">開啟連結 ↗</a></div></div></article>
+<article class="card" data-status="想煮" data-cuisine="烘焙/甜點" data-platform="手記" data-url=""><button type="button" class="status-banner" data-status="想煮">想煮</button><div class="card-body"><div class="card-top"><span class="badge platform">手記</span><button type="button" class="badge cuisine">烘焙/甜點</button><button type="button" class="del-btn" aria-label="刪除這筆收藏">✕</button></div><p class="note" contenteditable="true" spellcheck="false">鳳梨蘋果果醬</p><details class="steps-toggle"><summary><span class="chevron">▾</span> 食材／作法</summary><div class="recipe-detail"><div><h3 class="detail-label">食材</h3><div class="ingredients" contenteditable="true" spellcheck="false">鳳梨丁 1000g、蘋果丁 350g、檸檬汁 1顆、糖 500g</div></div><div><h3 class="detail-label">做法</h3><div class="steps-list"><div class="step-row"><span class="step-num">1.</span><div class="step-text" contenteditable="true" spellcheck="false">中火加熱水果五分鐘</div></div><div class="step-row"><span class="step-num">2.</span><div class="step-text" contenteditable="true" spellcheck="false">拌勻水果，加入糖和一半檸檬汁</div></div><div class="step-row"><span class="step-num">3.</span><div class="step-text" contenteditable="true" spellcheck="false">攪拌熬煮共50分鐘</div></div><div class="step-row"><span class="step-num">4.</span><div class="step-text" contenteditable="true" spellcheck="false">過程中攪拌、撈浮渣</div></div><div class="step-row"><span class="step-num">5.</span><div class="step-text" contenteditable="true" spellcheck="false">最後加入剩餘檸檬汁，兩分鐘後熄火</div></div></div></div></div></details></div></article>
+<article class="card" data-status="已煮" data-cuisine="烘焙/甜點" data-platform="手記" data-url=""><button type="button" class="status-banner" data-status="已煮">已煮</button><div class="card-body"><div class="card-top"><span class="badge platform">手記</span><button type="button" class="badge cuisine">烘焙/甜點</button><button type="button" class="del-btn" aria-label="刪除這筆收藏">✕</button></div><p class="note" contenteditable="true" spellcheck="false">巧克力餅乾</p><details class="steps-toggle"><summary><span class="chevron">▾</span> 食材／作法</summary><div class="recipe-detail"><div><h3 class="detail-label">食材</h3><div class="ingredients" contenteditable="true" spellcheck="false">奶油 60g、糖 60g、蛋 1顆、低筋麵粉 110g、可可粉 15g、泡打粉 1/4茶匙</div></div><div><h3 class="detail-label">做法</h3><div class="steps-list"><div class="step-row"><span class="step-num">1.</span><div class="step-text" contenteditable="true" spellcheck="false">奶油+糖+蛋攪勻，加入粉類</div></div><div class="step-row"><span class="step-num">2.</span><div class="step-text" contenteditable="true" spellcheck="false">揉成團，冷凍30分鐘讓麵團變硬</div></div><div class="step-row"><span class="step-num">3.</span><div class="step-text" contenteditable="true" spellcheck="false">烤箱預熱5分鐘，麵團切成要的形狀</div></div><div class="step-row"><span class="step-num">4.</span><div class="step-text" contenteditable="true" spellcheck="false">烤15-20分鐘，關火等溫度降再拿出來</div></div></div></div></div></details></div></article>
+<article class="card" data-status="已煮" data-cuisine="烘焙/甜點" data-platform="手記" data-url=""><button type="button" class="status-banner" data-status="已煮">已煮</button><div class="card-body"><div class="card-top"><span class="badge platform">手記</span><button type="button" class="badge cuisine">烘焙/甜點</button><button type="button" class="del-btn" aria-label="刪除這筆收藏">✕</button></div><p class="note" contenteditable="true" spellcheck="false">法式吐司</p><p class="note-sub" contenteditable="true" spellcheck="false">用法國麵包製作</p><details class="steps-toggle"><summary><span class="chevron">▾</span> 食材／作法</summary><div class="recipe-detail"><div><h3 class="detail-label">食材</h3><div class="ingredients" contenteditable="true" spellcheck="false">蛋 1顆、牛奶 60g、糖 8g、法國麵包（切約3cm厚片）</div></div><div><h3 class="detail-label">做法</h3><div class="steps-list"><div class="step-row"><span class="step-num">1.</span><div class="step-text" contenteditable="true" spellcheck="false">調製蛋液（蛋1顆+牛奶60g+糖8g）</div></div><div class="step-row"><span class="step-num">2.</span><div class="step-text" contenteditable="true" spellcheck="false">麵包片浸泡蛋液30-60分鐘（依厚度3cm調整浸泡時間）</div></div></div></div></div></details></div></article>
+<article class="card" data-status="已煮" data-cuisine="烘焙/甜點" data-platform="手記" data-url=""><button type="button" class="status-banner" data-status="已煮">已煮</button><div class="card-body"><div class="card-top"><span class="badge platform">手記</span><button type="button" class="badge cuisine">烘焙/甜點</button><button type="button" class="del-btn" aria-label="刪除這筆收藏">✕</button></div><p class="note" contenteditable="true" spellcheck="false">燕麥餅乾🍪</p><p class="note-sub" contenteditable="true" spellcheck="false">10-12片</p><details class="steps-toggle"><summary><span class="chevron">▾</span> 食材／作法</summary><div class="recipe-detail"><div><h3 class="detail-label">食材</h3><div class="ingredients" contenteditable="true" spellcheck="false">燕麥 100g、低筋麵粉 45g、糖或蜂蜜 30g、奶油或沙拉油 30g、牛奶 50g、（可加巧克力豆、蔓越莓乾、堅果乾等）</div></div><div><h3 class="detail-label">做法</h3><div class="steps-list"><div class="step-row"><span class="step-num">1.</span><div class="step-text" contenteditable="true" spellcheck="false">乾料混合攪拌後加入濕料拌勻</div></div><div class="step-row"><span class="step-num">2.</span><div class="step-text" contenteditable="true" spellcheck="false">烤箱130度烤15分鐘，換方向再烤10分鐘，底部再烤5分鐘</div></div></div></div></div></details></div></article>
+<article class="card" data-status="已煮" data-cuisine="烘焙/甜點" data-platform="手記" data-url=""><button type="button" class="status-banner" data-status="已煮">已煮</button><div class="card-body"><div class="card-top"><span class="badge platform">手記</span><button type="button" class="badge cuisine">烘焙/甜點</button><button type="button" class="del-btn" aria-label="刪除這筆收藏">✕</button></div><p class="note" contenteditable="true" spellcheck="false">香蕉燕麥鬆餅🥞</p><details class="steps-toggle"><summary><span class="chevron">▾</span> 食材／作法</summary><div class="recipe-detail"><div><h3 class="detail-label">食材</h3><div class="ingredients" contenteditable="true" spellcheck="false">香蕉 1根、燕麥 15g、蛋 1顆、牛奶（適量）</div></div><div><h3 class="detail-label">做法</h3><div class="steps-list"><div class="step-row"><span class="step-num">1.</span><div class="step-text" contenteditable="true" spellcheck="false">蛋打散，香蕉搗成泥</div></div><div class="step-row"><span class="step-num">2.</span><div class="step-text" contenteditable="true" spellcheck="false">蛋液與香蕉泥混合，慢慢加入燕麥（燕麥會吸水）</div></div><div class="step-row"><span class="step-num">3.</span><div class="step-text" contenteditable="true" spellcheck="false">攪打均勻成鬆餅糊</div></div></div></div></div></details></div></article>
+      </div>
+    </section>
+  </main>
+
+  <artifact-local>
+    <div class="empty-state" id="empty-state" hidden>
+      <div class="big" id="empty-title">還沒有收藏任何食譜</div>
+      <div id="empty-sub">從上面貼上第一個連結，開始建立你的食譜收藏盒吧！</div>
+    </div>
+  </artifact-local>
+
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  // Structural edits made from other devices (a card added/removed there)
+  // cause this script tag to run again on top of the SAME persistent DOM,
+  // but each run gets a brand-new closure. Re-attaching listeners would
+  // double them up, and a fresh run's filter state would start blank. So
+  // only the first run wires things up; later runs just ask that first
+  // run's closure to recompute derived UI (counts, filter, empty state).
+  if (window.__recipeBoxBooted) {
+    if (typeof window.__recipeBoxRefresh === "function") window.__recipeBoxRefresh();
+    return;
+  }
+  window.__recipeBoxBooted = true;
+
+  var list = document.getElementById("recipe-list");
+  var form = document.getElementById("add-form");
+  var urlInput = document.getElementById("in-url");
+  var noteInput = document.getElementById("in-note");
+  var cuisineInput = document.getElementById("in-cuisine");
+  var stepsInput = document.getElementById("in-steps");
+  var detectHint = document.getElementById("detect-hint");
+  var searchInput = document.getElementById("search-input");
+  var statusFilterGroup = document.getElementById("status-filter");
+  var cuisineFilterSelect = document.getElementById("cuisine-filter");
+  var summaryEl = document.getElementById("summary");
+  var emptyState = document.getElementById("empty-state");
+  var emptyTitle = document.getElementById("empty-title");
+  var emptySub = document.getElementById("empty-sub");
+  var readonlyBanner = document.getElementById("readonly-banner");
+  var recoveryBanner = document.getElementById("recovery-banner");
+  var recoveryText = document.getElementById("recovery-text");
+  var recoveryRestoreBtn = document.getElementById("recovery-restore-btn");
+  var recoveryDismissBtn = document.getElementById("recovery-dismiss-btn");
+  var exportBtn = document.getElementById("export-btn");
+  var importBtn = document.getElementById("import-btn");
+  var importFileInput = document.getElementById("import-file");
+
+  var STATUS_CYCLE = ["想煮", "已煮", "最愛"];
+  var STATUS_DISPLAY = { "想煮": "想煮", "已煮": "已煮", "最愛": "♥ 最愛" };
+  var CUISINE_CYCLE = ["正餐", "小菜/小食", "湯品", "烘焙/甜點"];
+  var NOTE_PLACEHOLDER_WITH_LINK = "還沒寫名稱，點連結看看內容吧";
+  var NOTE_PLACEHOLDER_NO_LINK = "（點這裡輸入料理名稱）";
+  var ING_PLACEHOLDER = "點這裡新增食材…";
+  var STEP_PLACEHOLDER = "點這裡新增第一個步驟…";
+
+  function gridFor(cuisine) {
+    return document.querySelector('.grid[data-cuisine-grid="' + cuisine + '"]') ||
+      document.querySelector('.grid[data-cuisine-grid="' + CUISINE_CYCLE[0] + '"]');
+  }
+
+  function detectPlatform(url) {
+    try {
+      var host = new URL(url).hostname.replace(/^www\./, "").replace(/^m\./, "");
+      if (/(^|\.)youtube\.com$/.test(host) || host === "youtu.be") return "YouTube";
+      if (/(^|\.)instagram\.com$/.test(host)) return "IG";
+      if (/(^|\.)threads\.net$/.test(host) || /(^|\.)threads\.com$/.test(host)) return "Threads";
+      if (/(^|\.)facebook\.com$/.test(host) || host === "fb.watch") return "FB";
+      return host || "網站";
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function formatDate(d) {
+    return (d.getMonth() + 1) + "/" + d.getDate();
+  }
+
+  // Where, as a plain character offset into el's text, the caret currently
+  // sits (or the end of the text if there's no selection inside el).
+  function getCaretOffset(el) {
+    var sel = window.getSelection();
+    if (!sel || !sel.rangeCount) return el.textContent.length;
+    var range = sel.getRangeAt(0);
+    if (!el.contains(range.endContainer)) return el.textContent.length;
+    var pre = range.cloneRange();
+    pre.selectNodeContents(el);
+    pre.setEnd(range.endContainer, range.endOffset);
+    return pre.toString().length;
+  }
+
+  // Places the caret at a plain character offset into el's (single) text node.
+  function setCaretOffset(el, offset) {
+    var textNode = el.firstChild;
+    if (!textNode) {
+      textNode = document.createTextNode("");
+      el.appendChild(textNode);
+    }
+    var pos = Math.max(0, Math.min(offset, textNode.textContent.length));
+    var range = document.createRange();
+    range.setStart(textNode, pos);
+    range.collapse(true);
+    var sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+  }
+
+  // Invisible marker used only as a transient caret guard — see insertPlainText.
+  // (Built from a char code rather than embedded literally so the source
+  // file never carries an invisible character that's easy to lose in edits.)
+  var CARET_GUARD = String.fromCharCode(8203);
+
+  // Inserts plain text at the caret by rewriting el's textContent outright,
+  // rather than splicing a new Text node into the DOM at the Range/Selection.
+  // `execCommand("insertText", ...)` inserts "\n" as a literal <div><br></div>
+  // in this Chromium build (not a text character), and even a hand-built
+  // Range insertion leaves a second sibling Text node that Chromium's own
+  // selection bookkeeping mishandles on the next keystroke. Rebuilding
+  // textContent from a plain string sidesteps both: whatever was there
+  // before, the element is left with exactly one Text node and no element
+  // children afterward, which is what the sync engine requires to save
+  // edits to it.
+  //
+  // One more Chromium quirk this has to work around: a caret placed exactly
+  // at the end of a text node whose last character is "\n" is ambiguous —
+  // the very next character *typed natively* lands BEFORE that newline
+  // instead of on the new line. When this insertion would leave the caret in
+  // exactly that spot, a zero-width space is appended after it so the caret
+  // sits before an unambiguous "next character"; the input listener in
+  // makePlainTextEditable strips it back out the moment a real keystroke
+  // follows (and the blur handler strips it as a final safety net).
+  function insertPlainText(el, text) {
+    var offset = getCaretOffset(el);
+    var content = el.textContent;
+    var newContent = content.slice(0, offset) + text + content.slice(offset);
+    var caretPos = offset + text.length;
+    if (caretPos === newContent.length && newContent.slice(-1) === "\n") {
+      newContent += CARET_GUARD;
+    }
+    el.textContent = newContent;
+    setCaretOffset(el, caretPos);
+  }
+
+  // Keeps a contenteditable element as a single run of plain text (no
+  // <br>/<div> children), which is what the live-doc sync mechanism requires
+  // in order to save edits made to it. Used for single-line-ish fields
+  // (note, ingredients) where Enter just finishes editing rather than
+  // inserting a line break — steps use their own per-row wiring instead
+  // (see wireStepRow) so each step stays its own leaf.
+  function makePlainTextEditable(el) {
+    el.addEventListener("keydown", function (e) {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        el.blur();
+      }
+    });
+    el.addEventListener("paste", function (e) {
+      e.preventDefault();
+      var text = (e.clipboardData || window.clipboardData).getData("text/plain");
+      text = text.replace(/\s*\n\s*/g, " ");
+      insertPlainText(el, text);
+    });
+    el.addEventListener("input", function (e) {
+      if (e.isComposing) return;
+      if (el.textContent.indexOf(CARET_GUARD) === -1) return;
+      var offset = getCaretOffset(el);
+      var guardsBeforeCaret = (el.textContent.slice(0, offset).split(CARET_GUARD).length - 1);
+      el.textContent = el.textContent.split(CARET_GUARD).join("");
+      setCaretOffset(el, offset - guardsBeforeCaret);
+    });
+  }
+
+  function bindPlaceholder(el, placeholderText) {
+    el.addEventListener("focus", function () {
+      if (el.classList.contains("placeholder")) {
+        el.textContent = "";
+        el.classList.remove("placeholder");
+      }
+    });
+    el.addEventListener("blur", function () {
+      if (!el.textContent.trim()) {
+        el.textContent = placeholderText;
+        el.classList.add("placeholder");
+      } else {
+        el.classList.remove("placeholder");
+      }
+    });
+  }
+
+  // ---------- steps as separate rows (number + text) ----------
+  // Each step lives in its own leaf contenteditable (.step-text) inside a
+  // flex row with its number label — this is what gives wrapped long steps
+  // a proper hanging indent, and makes renumbering trivial (just relabel
+  // the rows) instead of text-parsing a single blob on every edit.
+
+  function createStepRow(text) {
+    var row = document.createElement("div");
+    row.className = "step-row";
+    var num = document.createElement("span");
+    num.className = "step-num";
+    row.appendChild(num);
+    var textEl = document.createElement("div");
+    var trimmed = (text || "").trim();
+    textEl.className = trimmed ? "step-text" : "step-text placeholder";
+    textEl.textContent = trimmed || STEP_PLACEHOLDER;
+    textEl.setAttribute("contenteditable", "true");
+    textEl.setAttribute("spellcheck", "false");
+    row.appendChild(textEl);
+    return row;
+  }
+
+  function renumberStepRows(stepsListEl) {
+    var rows = stepsListEl.querySelectorAll(".step-row");
+    Array.prototype.forEach.call(rows, function (row, i) {
+      var num = row.querySelector(".step-num");
+      if (num) num.textContent = (i + 1) + ".";
+    });
+  }
+
+  function focusStepText(row, offset) {
+    var textEl = row.querySelector(".step-text");
+    if (!textEl) return;
+    textEl.focus();
+    setCaretOffset(textEl, offset);
+  }
+
+  function splitStepRow(row, textEl) {
+    var stepsListEl = row.parentNode;
+    var offset = getCaretOffset(textEl);
+    var full = textEl.textContent;
+    var before = full.slice(0, offset);
+    var after = full.slice(offset);
+    textEl.textContent = before;
+    textEl.classList.remove("placeholder");
+    var newRow = createStepRow(after);
+    stepsListEl.insertBefore(newRow, row.nextSibling);
+    wireStepRow(newRow);
+    renumberStepRows(stepsListEl);
+    focusStepText(newRow, 0);
+  }
+
+  function mergeStepRowWithPrevious(row, textEl) {
+    var prevRow = row.previousElementSibling;
+    if (!prevRow) return;
+    var stepsListEl = row.parentNode;
+    var prevText = prevRow.querySelector(".step-text");
+    var mergeAt = prevText.classList.contains("placeholder") ? 0 : prevText.textContent.length;
+    if (prevText.classList.contains("placeholder")) prevText.textContent = "";
+    prevText.textContent = prevText.textContent + textEl.textContent;
+    prevText.classList.remove("placeholder");
+    if (!prevText.textContent.trim()) {
+      prevText.textContent = STEP_PLACEHOLDER;
+      prevText.classList.add("placeholder");
+    }
+    row.remove();
+    renumberStepRows(stepsListEl);
+    focusStepText(prevRow, mergeAt);
+  }
+
+  function wireStepRow(row) {
+    var textEl = row.querySelector(".step-text");
+    if (!textEl || textEl.dataset.wired) return;
+    textEl.dataset.wired = "1";
+    bindPlaceholder(textEl, STEP_PLACEHOLDER);
+    textEl.addEventListener("keydown", function (e) {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        splitStepRow(row, textEl);
+      } else if (e.key === "Backspace" && !textEl.classList.contains("placeholder") &&
+        window.getSelection().isCollapsed && getCaretOffset(textEl) === 0) {
+        e.preventDefault();
+        mergeStepRowWithPrevious(row, textEl);
+      }
+    });
+    textEl.addEventListener("paste", function (e) {
+      e.preventDefault();
+      var text = (e.clipboardData || window.clipboardData).getData("text/plain").replace(/\s*\n\s*/g, " ");
+      insertPlainText(textEl, text);
+    });
+  }
+
+  // Wires up editable/cyclable behaviour on a card already in the DOM,
+  // whether it was there from the initial page load or just created.
+  function wireCard(card) {
+    var noteEl = card.querySelector(".note");
+    var ingEl = card.querySelector(".ingredients");
+    if (noteEl && !noteEl.dataset.wired) {
+      noteEl.dataset.wired = "1";
+      var notePlaceholder = card.dataset.url ? NOTE_PLACEHOLDER_WITH_LINK : NOTE_PLACEHOLDER_NO_LINK;
+      makePlainTextEditable(noteEl);
+      bindPlaceholder(noteEl, notePlaceholder);
+    }
+    if (ingEl && !ingEl.dataset.wired) {
+      ingEl.dataset.wired = "1";
+      makePlainTextEditable(ingEl);
+      bindPlaceholder(ingEl, ING_PLACEHOLDER);
+    }
+    Array.prototype.forEach.call(card.querySelectorAll(".step-row"), wireStepRow);
+  }
+
+  function buildCard(url, note, cuisine, platform, stepsLines, opts) {
+    opts = opts || {};
+    var status = (opts.status && STATUS_CYCLE.indexOf(opts.status) !== -1) ? opts.status : "想煮";
+
+    var card = document.createElement("article");
+    card.className = "card";
+    card.dataset.status = status;
+    card.dataset.cuisine = cuisine;
+    card.dataset.platform = platform;
+    card.dataset.url = url || "";
+
+    var banner = document.createElement("button");
+    banner.type = "button";
+    banner.className = "status-banner";
+    banner.dataset.status = status;
+    banner.textContent = STATUS_DISPLAY[status];
+    card.appendChild(banner);
+
+    var body = document.createElement("div");
+    body.className = "card-body";
+
+    var top = document.createElement("div");
+    top.className = "card-top";
+
+    var platformBadge = document.createElement("span");
+    platformBadge.className = "badge platform";
+    platformBadge.textContent = platform;
+    top.appendChild(platformBadge);
+
+    var cuisineBadge = document.createElement("button");
+    cuisineBadge.type = "button";
+    cuisineBadge.className = "badge cuisine";
+    cuisineBadge.textContent = cuisine;
+    top.appendChild(cuisineBadge);
+
+    var delBtn = document.createElement("button");
+    delBtn.type = "button";
+    delBtn.className = "del-btn";
+    delBtn.setAttribute("aria-label", "刪除這筆收藏");
+    delBtn.textContent = "✕";
+    top.appendChild(delBtn);
+
+    body.appendChild(top);
+
+    var noteEl = document.createElement("p");
+    var trimmedNote = (note || "").trim();
+    if (trimmedNote) {
+      noteEl.className = "note";
+      noteEl.textContent = trimmedNote;
+    } else {
+      noteEl.className = "note placeholder";
+      noteEl.textContent = url ? NOTE_PLACEHOLDER_WITH_LINK : NOTE_PLACEHOLDER_NO_LINK;
+    }
+    noteEl.setAttribute("contenteditable", "true");
+    noteEl.setAttribute("spellcheck", "false");
+    body.appendChild(noteEl);
+
+    var trimmedNoteSub = (opts.noteSub || "").trim();
+    if (trimmedNoteSub) {
+      var noteSubEl = document.createElement("p");
+      noteSubEl.className = "note-sub";
+      noteSubEl.textContent = trimmedNoteSub;
+      noteSubEl.setAttribute("contenteditable", "true");
+      noteSubEl.setAttribute("spellcheck", "false");
+      body.appendChild(noteSubEl);
+    }
+
+    var details = document.createElement("details");
+    details.className = "steps-toggle";
+    var summary = document.createElement("summary");
+    summary.innerHTML = '<span class="chevron">▾</span> 食材／作法';
+    details.appendChild(summary);
+
+    var detail = document.createElement("div");
+    detail.className = "recipe-detail";
+
+    var ingBlock = document.createElement("div");
+    var ingLabel = document.createElement("h3");
+    ingLabel.className = "detail-label";
+    ingLabel.textContent = "食材";
+    ingBlock.appendChild(ingLabel);
+    var ingEl = document.createElement("div");
+    var trimmedIng = (opts.ingredients || "").trim();
+    if (trimmedIng) {
+      ingEl.className = "ingredients";
+      ingEl.textContent = trimmedIng;
+    } else {
+      ingEl.className = "ingredients placeholder";
+      ingEl.textContent = ING_PLACEHOLDER;
+    }
+    ingEl.setAttribute("contenteditable", "true");
+    ingEl.setAttribute("spellcheck", "false");
+    ingBlock.appendChild(ingEl);
+    detail.appendChild(ingBlock);
+
+    var stepBlock = document.createElement("div");
+    var stepLabel = document.createElement("h3");
+    stepLabel.className = "detail-label";
+    stepLabel.textContent = "做法";
+    stepBlock.appendChild(stepLabel);
+    var stepsListEl = document.createElement("div");
+    stepsListEl.className = "steps-list";
+    var lines = (stepsLines || []).map(function (s) { return s.trim(); }).filter(function (s) { return s.length > 0; });
+    if (!lines.length) lines = [""];
+    lines.forEach(function (line) { stepsListEl.appendChild(createStepRow(line)); });
+    renumberStepRows(stepsListEl);
+    stepBlock.appendChild(stepsListEl);
+    detail.appendChild(stepBlock);
+
+    details.appendChild(detail);
+    body.appendChild(details);
+
+    if (url) {
+      var footer = document.createElement("div");
+      footer.className = "card-footer";
+      var link = document.createElement("a");
+      link.className = "link-out";
+      link.href = url;
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+      link.textContent = "開啟連結 ↗";
+      footer.appendChild(link);
+      body.appendChild(footer);
+    }
+
+    card.appendChild(body);
+
+    wireCard(card);
+
+    return card;
+  }
+
+  form.addEventListener("submit", function (e) {
+    e.preventDefault();
+    var urlRaw = urlInput.value.trim();
+    var noteRaw = noteInput.value;
+    var stepsRaw = stepsInput.value;
+
+    if (!urlRaw && !noteRaw.trim() && !stepsRaw.trim()) {
+      detectHint.textContent = "至少填寫連結、料理名稱或作法其中一項。";
+      return;
+    }
+
+    var platform, url;
+    if (urlRaw) {
+      platform = detectPlatform(urlRaw);
+      if (!platform) {
+        detectHint.textContent = "這個連結看起來怪怪的，請確認網址是否正確。";
+        return;
+      }
+      url = urlRaw;
+    } else {
+      platform = "手記";
+      url = "";
+    }
+
+    var stepsLines = stepsRaw.split("\n");
+    var cuisine = cuisineInput.value;
+    var card = buildCard(url, noteRaw, cuisine, platform, stepsLines);
+    gridFor(cuisine).appendChild(card);
+
+    urlInput.value = "";
+    noteInput.value = "";
+    stepsInput.value = "";
+    detectHint.textContent = "";
+    urlInput.focus();
+
+    refreshDerived();
+  });
+
+  urlInput.addEventListener("input", function () {
+    var v = urlInput.value.trim();
+    if (!v) { detectHint.textContent = ""; return; }
+    var platform = detectPlatform(v);
+    detectHint.innerHTML = platform ? "偵測到平台：<b>" + platform + "</b>" : "";
+  });
+
+  list.addEventListener("click", function (e) {
+    var delBtn = e.target.closest(".del-btn");
+    if (delBtn) {
+      var card = delBtn.closest(".card");
+      if (card) card.remove();
+      refreshDerived();
+      return;
+    }
+    var banner = e.target.closest(".status-banner");
+    if (banner) {
+      var card2 = banner.closest(".card");
+      var current = card2.dataset.status;
+      var idx = STATUS_CYCLE.indexOf(current);
+      var next = STATUS_CYCLE[(idx + 1) % STATUS_CYCLE.length];
+      card2.dataset.status = next;
+      banner.dataset.status = next;
+      banner.textContent = STATUS_DISPLAY[next];
+      refreshDerived();
+      return;
+    }
+    var cuisineBtn = e.target.closest(".badge.cuisine");
+    if (cuisineBtn) {
+      var card3 = cuisineBtn.closest(".card");
+      var currentCuisine = card3.dataset.cuisine;
+      var cIdx = CUISINE_CYCLE.indexOf(currentCuisine);
+      var nextCuisine = CUISINE_CYCLE[(cIdx + 1) % CUISINE_CYCLE.length];
+      card3.dataset.cuisine = nextCuisine;
+      cuisineBtn.textContent = nextCuisine;
+      var targetGrid = gridFor(nextCuisine);
+      if (targetGrid) targetGrid.appendChild(card3);
+      refreshDerived();
+      return;
+    }
+  });
+
+  // Existing cards already in the served HTML (imported recipes) also need
+  // their note/ingredients/step fields made editable and their cuisine
+  // badge cyclable.
+  Array.prototype.forEach.call(list.querySelectorAll(".card"), wireCard);
+
+  var currentStatusFilter = "all";
+  var currentCuisineFilter = "all";
+
+  statusFilterGroup.addEventListener("click", function (e) {
+    var btn = e.target.closest(".chip");
+    if (!btn) return;
+    currentStatusFilter = btn.dataset.statusFilter;
+    Array.prototype.forEach.call(statusFilterGroup.querySelectorAll(".chip"), function (c) {
+      c.setAttribute("aria-pressed", c === btn ? "true" : "false");
+    });
+    applyFilter();
+  });
+
+  cuisineFilterSelect.addEventListener("change", function () {
+    currentCuisineFilter = cuisineFilterSelect.value;
+    applyFilter();
+  });
+
+  searchInput.addEventListener("input", applyFilter);
+
+  function applyFilter() {
+    var q = searchInput.value.trim().toLowerCase();
+    var cards = list.querySelectorAll(".card");
+    var visibleCount = 0;
+    Array.prototype.forEach.call(cards, function (card) {
+      var matchesStatus = currentStatusFilter === "all" || card.dataset.status === currentStatusFilter;
+      var matchesCuisine = currentCuisineFilter === "all" || card.dataset.cuisine === currentCuisineFilter;
+      var stepsText = Array.prototype.map.call(card.querySelectorAll(".step-text"), function (s) {
+        return s.textContent;
+      }).join(" ");
+      var haystack = ((card.querySelector(".note") || {}).textContent || "") + " " +
+        ((card.querySelector(".ingredients") || {}).textContent || "") + " " +
+        stepsText + " " + card.dataset.cuisine + " " + card.dataset.platform;
+      var matchesSearch = !q || haystack.toLowerCase().indexOf(q) !== -1;
+      var visible = matchesStatus && matchesCuisine && matchesSearch;
+      if (visible) {
+        card.removeAttribute("data-local-hidden");
+        visibleCount++;
+      } else {
+        card.dataset.localHidden = "true";
+      }
+    });
+
+    // Hide whole cuisine sections once every card inside is filtered out,
+    // and keep each heading's running count current.
+    Array.prototype.forEach.call(document.querySelectorAll(".cuisine-section"), function (section) {
+      var sectionCards = section.querySelectorAll(".card");
+      var sectionVisible = section.querySelectorAll('.card:not([data-local-hidden="true"])').length;
+      if (sectionVisible === 0) {
+        section.dataset.localHidden = "true";
+      } else {
+        section.removeAttribute("data-local-hidden");
+      }
+      var countEl = section.querySelector(".cuisine-count");
+      if (countEl) countEl.textContent = sectionCards.length ? "（" + sectionCards.length + "）" : "";
+    });
+
+    var totalCount = cards.length;
+    if (totalCount === 0) {
+      emptyState.hidden = false;
+      emptyTitle.textContent = "還沒有收藏任何食譜";
+      emptySub.textContent = "從上面貼上第一個連結，開始建立你的食譜收藏盒吧！";
+    } else if (visibleCount === 0) {
+      emptyState.hidden = false;
+      emptyTitle.textContent = "沒有符合條件的食譜";
+      emptySub.textContent = "試試看清除搜尋文字或篩選條件。";
+    } else {
+      emptyState.hidden = true;
+    }
+  }
+
+  // Within each cuisine grid, show cards that haven't been cooked yet
+  // (想煮) before ones that have (已煮 / 最愛). Stable sort keeps each
+  // group's existing relative order.
+  function sortCardsByStatus() {
+    Array.prototype.forEach.call(document.querySelectorAll(".grid[data-cuisine-grid]"), function (grid) {
+      var cards = Array.prototype.slice.call(grid.querySelectorAll(":scope > .card"));
+      cards.sort(function (a, b) {
+        var aRank = a.dataset.status === "想煮" ? 0 : 1;
+        var bRank = b.dataset.status === "想煮" ? 0 : 1;
+        return aRank - bRank;
+      });
+      cards.forEach(function (card) { grid.appendChild(card); });
+    });
+  }
+
+  function refreshDerived() {
+    sortCardsByStatus();
+    applyFilter();
+    var cards = list.querySelectorAll(".card");
+    var counts = { 想煮: 0, 已煮: 0, 最愛: 0 };
+    Array.prototype.forEach.call(cards, function (card) {
+      var s = card.dataset.status;
+      if (counts.hasOwnProperty(s)) counts[s]++;
+    });
+    summaryEl.innerHTML = "共 <b>" + cards.length + "</b> 筆　想煮 <b>" + counts["想煮"] +
+      "</b>　已煮 <b>" + counts["已煮"] + "</b>　最愛 <b>" + counts["最愛"] + "</b>";
+  }
+
+  window.__recipeBoxRefresh = refreshDerived;
+
+  document.addEventListener("claude:edit", refreshDerived);
+  document.addEventListener("claude:sync-off", function () {
+    readonlyBanner.classList.add("show");
+  });
+  document.addEventListener("claude:sync-lost", function () {
+    readonlyBanner.classList.add("show");
+  });
+
+  // ---------- local backup / recovery (client-side safety net) ----------
+  //
+  // The shared "live doc" sync above is the primary way this page's edits
+  // reach other devices and Claude. It depends on a server-side service
+  // that can be temporarily unavailable. As a same-device safety net (NOT
+  // a replacement for the shared sync), every change is also mirrored
+  // into this browser's localStorage under a versioned key. If a page
+  // load ever shows fewer recipes than this browser last saw, a banner
+  // offers to add the missing ones back -- never automatically, and never
+  // by silently overwriting what's currently shown.
+
+  var STORAGE_KEY = "recipe_box_data_v1";
+
+  function serializeCard(cardEl) {
+    var noteEl = cardEl.querySelector(".note");
+    var noteSubEl = cardEl.querySelector(".note-sub");
+    var ingEl = cardEl.querySelector(".ingredients");
+    var stepEls = cardEl.querySelectorAll(".step-text");
+    return {
+      status: cardEl.dataset.status || "想煮",
+      cuisine: cardEl.dataset.cuisine || CUISINE_CYCLE[0],
+      platform: cardEl.dataset.platform || "手記",
+      url: cardEl.dataset.url || "",
+      note: noteEl ? noteEl.textContent.trim() : "",
+      noteSub: (noteSubEl && !noteSubEl.classList.contains("placeholder")) ? noteSubEl.textContent.trim() : "",
+      ingredients: (ingEl && !ingEl.classList.contains("placeholder")) ? ingEl.textContent.trim() : "",
+      steps: Array.prototype.map.call(stepEls, function (s) {
+        return s.classList.contains("placeholder") ? "" : s.textContent.trim();
+      }).filter(function (t) { return t.length > 0; })
+    };
+  }
+
+  function cardKeyOf(data) {
+    return (data.cuisine || "") + "||" + (data.note || "").trim();
+  }
+
+  function buildSnapshot() {
+    return {
+      version: 1,
+      cards: Array.prototype.map.call(list.querySelectorAll(".card"), serializeCard),
+      updatedAt: new Date().toISOString()
+    };
+  }
+
+  function isValidSnapshot(data) {
+    return !!data && typeof data === "object" && Array.isArray(data.cards) &&
+      data.cards.every(function (c) {
+        return c && typeof c === "object" && typeof c.note === "string";
+      });
+  }
+
+  function saveSnapshot() {
+    try {
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(buildSnapshot()));
+    } catch (e) {
+      // localStorage unavailable (private mode, quota, disabled). The
+      // shared live-doc sync above is still the primary save path, so
+      // this is a soft failure, not fatal -- nothing shown to the user.
+    }
+  }
+
+  function loadSnapshot() {
+    try {
+      var raw = window.localStorage.getItem(STORAGE_KEY);
+      if (!raw) return null;
+      var data = JSON.parse(raw);
+      return isValidSnapshot(data) ? data : null;
+    } catch (e) {
+      return null; // corrupt JSON or a storage error -- never blank the page over this
+    }
+  }
+
+  // Builds a full card element from a plain data object (used by both the
+  // local-recovery banner and JSON import) and drops it into the right grid.
+  function insertCardFromData(data) {
+    var cuisine = (data.cuisine && CUISINE_CYCLE.indexOf(data.cuisine) !== -1) ? data.cuisine : CUISINE_CYCLE[0];
+    var card = buildCard(data.url, data.note, cuisine, data.platform || "手記", data.steps || [], {
+      status: data.status,
+      noteSub: data.noteSub,
+      ingredients: data.ingredients
+    });
+    gridFor(cuisine).appendChild(card);
+    return card;
+  }
+
+  var pendingRecovery = null;
+
+  function checkLocalRecovery() {
+    var snapshot = loadSnapshot();
+    if (!snapshot) { saveSnapshot(); return; }
+    var currentKeys = {};
+    Array.prototype.forEach.call(list.querySelectorAll(".card"), function (c) {
+      currentKeys[cardKeyOf(serializeCard(c))] = true;
+    });
+    var missing = snapshot.cards.filter(function (c) { return !currentKeys[cardKeyOf(c)]; });
+    if (!missing.length) { saveSnapshot(); return; }
+    // Don't overwrite the snapshot yet -- wait for the viewer's decision so
+    // the recovery option survives even if they leave without deciding.
+    pendingRecovery = missing;
+    var names = missing.slice(0, 3).map(function (c) { return c.note || "（未命名）"; }).join("、");
+    var more = missing.length > 3 ? " 等" : "";
+    recoveryText.textContent = "這台裝置上有 " + missing.length + " 筆本機備份的食譜目前沒有顯示（" + names + more + "），可能是儲存服務暫時的問題造成的。要救回嗎？";
+    recoveryBanner.hidden = false;
+    recoveryBanner.classList.add("show");
+  }
+
+  recoveryRestoreBtn.addEventListener("click", function () {
+    if (pendingRecovery) {
+      pendingRecovery.forEach(insertCardFromData);
+      pendingRecovery = null;
+      refreshDerived();
+      saveSnapshot();
+    }
+    recoveryBanner.classList.remove("show");
+    recoveryBanner.hidden = true;
+  });
+
+  recoveryDismissBtn.addEventListener("click", function () {
+    pendingRecovery = null;
+    recoveryBanner.classList.remove("show");
+    recoveryBanner.hidden = true;
+    saveSnapshot();
+  });
+
+  // Mirror every future change (add / edit / delete / status / cuisine)
+  // into localStorage, debounced so a burst of typing doesn't hammer it.
+  var saveSnapshotTimer = null;
+  var listObserver = new MutationObserver(function () {
+    clearTimeout(saveSnapshotTimer);
+    saveSnapshotTimer = setTimeout(saveSnapshot, 600);
+  });
+  listObserver.observe(list, {
+    childList: true,
+    subtree: true,
+    characterData: true,
+    attributes: true,
+    attributeFilter: ["data-status", "data-cuisine"]
+  });
+
+  // ---------- JSON export / import (portable backup, independent of
+  // whatever storage mechanism this view has available) ----------
+
+  function exportRecipes() {
+    var json = JSON.stringify(buildSnapshot(), null, 2);
+    var useDownloads = (window.claude && typeof window.claude.use === "function")
+      ? window.claude.use("downloads")
+      : Promise.resolve(null);
+    useDownloads.then(function (downloads) {
+      if (downloads) {
+        return downloads.save({ filename: "recipes-backup.json", data: json }).catch(function (err) {
+          window.alert("匯出失敗（" + (err && err.code ? err.code : "未知錯誤") + "），請稍後再試一次。");
+        });
+      }
+      // Fallback when the downloads capability isn't available in this
+      // view: open the JSON in a new tab so it can be saved manually.
+      var win = window.open("", "_blank");
+      if (win) {
+        win.document.write("<pre>" + json.replace(/&/g, "&amp;").replace(/</g, "&lt;") + "</pre>");
+      } else {
+        window.alert("這個檢視環境無法直接下載檔案，請改用其他裝置或瀏覽器試試。");
+      }
+    });
+  }
+
+  exportBtn.addEventListener("click", exportRecipes);
+
+  importBtn.addEventListener("click", function () { importFileInput.click(); });
+
+  importFileInput.addEventListener("change", function (e) {
+    var file = e.target.files && e.target.files[0];
+    e.target.value = "";
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function () {
+      var data;
+      try {
+        data = JSON.parse(reader.result);
+      } catch (err) {
+        window.alert("讀取失敗：這不是有效的 JSON 檔案。");
+        return;
+      }
+      if (!isValidSnapshot(data)) {
+        window.alert("檔案格式不正確，無法匯入（需要是這個食譜收藏盒匯出的備份檔）。");
+        return;
+      }
+      var currentKeys = {};
+      Array.prototype.forEach.call(list.querySelectorAll(".card"), function (c) {
+        currentKeys[cardKeyOf(serializeCard(c))] = true;
+      });
+      var toAdd = data.cards.filter(function (c) { return !currentKeys[cardKeyOf(c)]; });
+      if (!toAdd.length) {
+        window.alert("這個備份檔裡的食譜，目前頁面上都已經有了，沒有新增任何東西。");
+        return;
+      }
+      toAdd.forEach(insertCardFromData);
+      refreshDerived();
+      saveSnapshot();
+      window.alert("已匯入 " + toAdd.length + " 筆食譜。");
+    };
+    reader.onerror = function () {
+      window.alert("讀取檔案時發生錯誤，請再試一次。");
+    };
+    reader.readAsText(file, "utf-8");
+  });
+
+  refreshDerived();
+  checkLocalRecovery();
+})();
+</script>
