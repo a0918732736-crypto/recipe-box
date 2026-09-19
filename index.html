@@ -1,4 +1,11 @@
 <title>食譜收藏盒</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#fbf3de">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="食譜收藏盒">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@1,600&family=Noto+Sans+TC:wght@400;500;600;700;800&family=Noto+Serif+TC:wght@700;900&display=swap" rel="stylesheet">
@@ -1552,4 +1559,15 @@
   refreshDerived();
   checkLocalRecovery();
 })();
+</script>
+<script>
+  // Registers the service worker so this page can be "installed" (加到主畫面 /
+  // 安裝應用程式) and still opens even without a network connection. This is
+  // additive only -- if registration fails (unsupported browser, blocked),
+  // the page works exactly as before, just without the install prompt.
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", function () {
+      navigator.serviceWorker.register("sw.js").catch(function () {});
+    });
+  }
 </script>
