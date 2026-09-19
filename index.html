@@ -270,6 +270,15 @@
 
   .summary b { color: var(--ink); font-weight: 700; }
 
+  .sync-status {
+    font-size: 0.76rem;
+    color: var(--ink-muted);
+    white-space: nowrap;
+  }
+
+  .sync-status[data-state="synced"] { color: var(--herb); }
+  .sync-status[data-state="error"] { color: var(--clay); }
+
   /* ---------- cuisine sections ---------- */
 
   .cuisine-section { margin-bottom: 1.9rem; }
@@ -681,7 +690,9 @@
         <option>烘焙/甜點</option>
       </select>
       <div class="summary" id="summary" aria-live="polite"></div>
+      <div class="sync-status" id="sync-status" aria-live="polite"></div>
       <div class="backup-actions">
+        <button type="button" class="backup-btn" id="sync-settings-btn">☁️ 跨裝置同步</button>
         <button type="button" class="backup-btn" id="export-btn">匯出食譜</button>
         <button type="button" class="backup-btn" id="import-btn">匯入食譜</button>
         <input type="file" id="import-file" accept="application/json,.json" hidden>
@@ -788,6 +799,8 @@
   var exportBtn = document.getElementById("export-btn");
   var importBtn = document.getElementById("import-btn");
   var importFileInput = document.getElementById("import-file");
+  var syncSettingsBtn = document.getElementById("sync-settings-btn");
+  var syncStatusEl = document.getElementById("sync-status");
 
   var STATUS_CYCLE = ["想煮", "已煮", "最愛"];
   var STATUS_DISPLAY = { "想煮": "想煮", "已煮": "已煮", "最愛": "♥ 最愛" };
@@ -1480,7 +1493,10 @@
   var saveSnapshotTimer = null;
   var listObserver = new MutationObserver(function () {
     clearTimeout(saveSnapshotTimer);
-    saveSnapshotTimer = setTimeout(saveSnapshot, 600);
+    saveSnapshotTimer = setTimeout(function () {
+      saveSnapshot();
+      syncNow();
+    }, 600);
   });
   listObserver.observe(list, {
     childList: true,
@@ -1488,6 +1504,226 @@
     characterData: true,
     attributes: true,
     attributeFilter: ["data-status", "data-cuisine"]
+  });
+
+  // ---------- cross-device sync (via this GitHub repo as the shared store) ----------
+  //
+  // This page is static -- there's no server of its own. Instead, the same
+  // GitHub repo this page is deployed from doubles as the shared data store:
+  // a "data.json" file at the repo root holds the latest snapshot, read
+  // through the public raw/API endpoint (no login needed) and written
+  // through the GitHub Contents API using a personal access token the
+  // viewer pastes in once per device (☁️ 跨裝置同步 button). Devices
+  // without a token still pull the latest data on load -- they just can't
+  // push their own edits back up.
+  //
+  // localStorage stays the immediate, always-available source of truth for
+  // rendering (see above) -- sync is a layer on top that reconciles it
+  // against the shared file, never a replacement for it.
+
+  var GITHUB_OWNER = "a0918732736-crypto";
+  var GITHUB_REPO = "recipe-box";
+  var GITHUB_DATA_PATH = "data.json";
+  var GH_TOKEN_KEY = "recipe_box_gh_token_v1";
+  var GH_SHA_KEY = "recipe_box_gh_sha_v1";
+  var GH_SYNCED_BEFORE_KEY = "recipe_box_gh_synced_before_v1";
+
+  function getSyncToken() {
+    try { return window.localStorage.getItem(GH_TOKEN_KEY) || ""; } catch (e) { return ""; }
+  }
+  function setSyncToken(token) {
+    try {
+      if (token) window.localStorage.setItem(GH_TOKEN_KEY, token);
+      else window.localStorage.removeItem(GH_TOKEN_KEY);
+    } catch (e) {}
+  }
+  function getStoredSha() {
+    try { return window.localStorage.getItem(GH_SHA_KEY) || null; } catch (e) { return null; }
+  }
+  function setStoredSha(sha) {
+    try {
+      if (sha) window.localStorage.setItem(GH_SHA_KEY, sha);
+      else window.localStorage.removeItem(GH_SHA_KEY);
+    } catch (e) {}
+  }
+  function hasSyncedBefore() {
+    try { return window.localStorage.getItem(GH_SYNCED_BEFORE_KEY) === "1"; } catch (e) { return false; }
+  }
+  function markSyncedBefore() {
+    try { window.localStorage.setItem(GH_SYNCED_BEFORE_KEY, "1"); } catch (e) {}
+  }
+
+  // atob/btoa only handle Latin-1, so text with Chinese characters needs an
+  // explicit UTF-8 round-trip on both sides of the base64 the GitHub API uses.
+  function utf8ToBase64(str) {
+    return window.btoa(unescape(encodeURIComponent(str)));
+  }
+  function base64ToUtf8(b64) {
+    return decodeURIComponent(escape(window.atob(b64.replace(/\n/g, ""))));
+  }
+
+  function setSyncStatus(state, text) {
+    if (!syncStatusEl) return;
+    syncStatusEl.dataset.state = state;
+    syncStatusEl.textContent = text;
+  }
+
+  function ghApiUrl() {
+    return "https://api.github.com/repos/" + GITHUB_OWNER + "/" + GITHUB_REPO + "/contents/" + GITHUB_DATA_PATH;
+  }
+
+  // Rebuilds the on-screen list from an arbitrary snapshot object (shared by
+  // the local-recovery hydration above and by "adopt the remote version"
+  // below) rather than only ever reading from localStorage.
+  function applySnapshotToDom(snapshot) {
+    Array.prototype.forEach.call(list.querySelectorAll(".card"), function (c) { c.remove(); });
+    snapshot.cards.forEach(insertCardFromData);
+    refreshDerived();
+  }
+
+  function fetchRemoteSnapshot(token) {
+    var headers = { "Accept": "application/vnd.github+json" };
+    if (token) headers["Authorization"] = "token " + token;
+    return fetch(ghApiUrl() + "?ts=" + Date.now(), { headers: headers }).then(function (res) {
+      if (res.status === 404) return { notFound: true };
+      if (!res.ok) return { error: "http_" + res.status };
+      return res.json().then(function (body) {
+        try {
+          var data = JSON.parse(base64ToUtf8(body.content));
+          if (!isValidSnapshot(data)) return { error: "invalid_json" };
+          return { snapshot: data, sha: body.sha };
+        } catch (e) {
+          return { error: "parse_failed" };
+        }
+      });
+    }).catch(function () {
+      return { error: "network" };
+    });
+  }
+
+  function pushSnapshotToRemote(snapshot, sha, token) {
+    var body = {
+      message: "同步食譜收藏（" + new Date().toISOString() + "）",
+      content: utf8ToBase64(JSON.stringify(snapshot, null, 2)),
+      branch: "main"
+    };
+    if (sha) body.sha = sha;
+    return fetch(ghApiUrl(), {
+      method: "PUT",
+      headers: {
+        "Accept": "application/vnd.github+json",
+        "Authorization": "token " + token,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(body)
+    }).then(function (res) {
+      if (res.status === 409) return { conflict: true };
+      if (!res.ok) return { error: "http_" + res.status };
+      return res.json().then(function (respBody) {
+        return { ok: true, sha: respBody.content && respBody.content.sha };
+      });
+    }).catch(function () {
+      return { error: "network" };
+    });
+  }
+
+  var syncInFlight = false;
+
+  function syncNow() {
+    if (syncInFlight) return;
+    var token = getSyncToken();
+    syncInFlight = true;
+    setSyncStatus("syncing", "同步中…");
+    fetchRemoteSnapshot(token).then(function (result) {
+      if (result.notFound) {
+        // Shared file doesn't exist yet -- this is the very first device to
+        // sync, so seed it from what's on screen right now.
+        if (!token) {
+          setSyncStatus("idle", "尚未設定跨裝置同步");
+          syncInFlight = false;
+          return;
+        }
+        return pushSnapshotToRemote(buildSnapshot(), null, token).then(function (pushResult) {
+          if (pushResult.ok) {
+            setStoredSha(pushResult.sha);
+            markSyncedBefore();
+            setSyncStatus("synced", "已同步（建立雲端備份）");
+          } else {
+            setSyncStatus("error", "同步失敗，稍後會自動重試");
+          }
+          syncInFlight = false;
+        });
+      }
+      if (result.error) {
+        setSyncStatus(result.error === "network" ? "idle" : "error",
+          result.error === "network" ? "離線，稍後自動重試" : "同步失敗，請檢查同步設定");
+        syncInFlight = false;
+        return;
+      }
+
+      setStoredSha(result.sha);
+
+      if (!hasSyncedBefore()) {
+        // First time this device has ever talked to the shared store:
+        // adopt whatever's already up there rather than guessing by clock.
+        applySnapshotToDom(result.snapshot);
+        saveSnapshot();
+        markSyncedBefore();
+        setSyncStatus("synced", "已同步");
+        syncInFlight = false;
+        return;
+      }
+
+      var localSnap = loadSnapshot();
+      var remoteTime = Date.parse((result.snapshot && result.snapshot.updatedAt) || 0) || 0;
+      var localTime = Date.parse((localSnap && localSnap.updatedAt) || 0) || 0;
+
+      if (remoteTime > localTime) {
+        applySnapshotToDom(result.snapshot);
+        saveSnapshot();
+        setSyncStatus("synced", "已同步（取得其他裝置的更新）");
+        syncInFlight = false;
+      } else if (localTime > remoteTime && token) {
+        pushSnapshotToRemote(localSnap, result.sha, token).then(function (pushResult) {
+          if (pushResult.ok) {
+            setStoredSha(pushResult.sha);
+            setSyncStatus("synced", "已同步");
+          } else if (pushResult.conflict) {
+            setSyncStatus("idle", "偵測到其他裝置同時更新，稍後重試");
+          } else {
+            setSyncStatus("error", "同步失敗，請檢查同步設定");
+          }
+          syncInFlight = false;
+        });
+      } else {
+        setSyncStatus(token ? "synced" : "idle", token ? "已同步" : "尚未設定跨裝置同步");
+        syncInFlight = false;
+      }
+    });
+  }
+
+  syncSettingsBtn.addEventListener("click", function () {
+    var current = getSyncToken();
+    var input = window.prompt(
+      "貼上 GitHub 個人存取權杖（Personal Access Token），讓這台裝置可以跨裝置同步食譜。\n" +
+      "留空並確定＝關閉這台裝置的同步。",
+      current
+    );
+    if (input === null) return; // cancelled
+    setSyncToken(input.trim());
+    if (input.trim()) {
+      syncNow();
+    } else {
+      setSyncStatus("idle", "已關閉這台裝置的同步");
+    }
+  });
+
+  // Piggyback a sync attempt on every debounced local save, and also poll
+  // occasionally while the tab stays open so a change made on another
+  // device shows up without needing a manual refresh.
+  var syncAfterSaveTimer = null;
+  document.addEventListener("visibilitychange", function () {
+    if (document.visibilityState === "visible") syncNow();
   });
 
   // ---------- JSON export / import (portable backup, independent of
@@ -1558,6 +1794,8 @@
 
   refreshDerived();
   checkLocalRecovery();
+  syncNow();
+  setInterval(syncNow, 90000);
 })();
 </script>
 <script>
