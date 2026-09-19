@@ -617,6 +617,88 @@
   .backup-btn:hover { background: var(--surface-hover); color: var(--ink); }
 
   artifact-local { display: contents; }
+
+  /* ---------- phone layout ----------
+     On a phone this page is mostly *read* — standing in the kitchen looking
+     up what goes in the pan. So the add form collapses behind a button
+     (otherwise it eats the entire first screen before a single recipe
+     shows), the masthead shrinks, the toolbar packs down, and the
+     ingredients/steps get bigger and darker so they're legible at arm's
+     length on a counter. */
+
+  .add-toggle { display: none; }
+
+  @media (max-width: 44rem) {
+    .app { padding: 0.9rem 0.9rem 3rem; }
+
+    .masthead { padding: 0.9rem 0 0.7rem; }
+    .masthead h1 { font-size: 1.8rem; letter-spacing: 0.03em; }
+    .masthead .caption { display: none; }
+
+    .add-toggle {
+      display: block;
+      width: 100%;
+      font: inherit;
+      font-weight: 700;
+      font-size: 0.95rem;
+      color: var(--gold-deep);
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 0.7rem;
+      padding: 0.75rem 1rem;
+      cursor: pointer;
+      margin-bottom: 0.9rem;
+      box-shadow: var(--shadow);
+    }
+
+    .add-card { display: none; }
+    .add-card.open { display: block; }
+
+    .toolbar {
+      gap: 0.5rem;
+      padding-bottom: 0.7rem;
+      margin-bottom: 1.1rem;
+    }
+
+    .search-field { flex: 1 1 100%; }
+    .search-field input { font-size: 1rem; padding: 0.6rem 0.7rem; }
+
+    /* One swipeable row instead of a 2x2 block that pushes recipes down. */
+    .chip-group {
+      flex: 1 1 100%;
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .chip-group::-webkit-scrollbar { display: none; }
+    .chip { flex: 0 0 auto; padding: 0.42rem 0.9rem; font-size: 0.85rem; }
+
+    .cuisine-select { flex: 1 1 auto; font-size: 0.85rem; }
+    .summary { margin-left: 0; font-size: 0.75rem; }
+    .sync-status { font-size: 0.7rem; }
+    .backup-actions { flex: 1 1 100%; justify-content: flex-end; }
+    .backup-btn { font-size: 0.72rem; padding: 0.32rem 0.6rem; }
+
+    .cuisine-heading { font-size: 1rem; margin: 0 0 0.6rem; }
+    .cuisine-section { margin-bottom: 1.4rem; }
+
+    .grid { grid-template-columns: 1fr; gap: 0.8rem; }
+
+    .note { font-size: 1.08rem; }
+
+    /* Bigger tap target -- this is the control used most while cooking. */
+    .steps-toggle summary { padding: 0.5rem 0; font-size: 0.85rem; }
+
+    /* Recipe body text: larger, looser, and full-strength ink rather than
+       the muted grey, which is hard to read on a bright kitchen counter. */
+    .ingredients { font-size: 0.97rem; line-height: 1.8; }
+    .step-text { font-size: 0.97rem; line-height: 1.8; color: var(--ink); }
+    .step-num { font-size: 0.97rem; }
+    .step-row { gap: 0.55rem; }
+    .steps-list { gap: 0.5rem; }
+    .recipe-detail { gap: 0.9rem; }
+    .link-out { font-size: 0.9rem; }
+  }
 </style>
 
 <div class="app">
@@ -639,6 +721,10 @@
     <h1>食譜收藏盒</h1>
     <p class="caption">Recipe Collection</p>
   </header>
+
+  <artifact-local>
+    <button type="button" class="add-toggle" id="add-toggle" aria-expanded="false" aria-controls="add-form">＋ 新增一筆收藏</button>
+  </artifact-local>
 
   <artifact-local>
     <form class="add-card" id="add-form">
@@ -801,6 +887,7 @@
   var importFileInput = document.getElementById("import-file");
   var syncSettingsBtn = document.getElementById("sync-settings-btn");
   var syncStatusEl = document.getElementById("sync-status");
+  var addToggleBtn = document.getElementById("add-toggle");
 
   var STATUS_CYCLE = ["想煮", "已煮", "最愛"];
   var STATUS_DISPLAY = { "想煮": "想煮", "已煮": "已煮", "最愛": "♥ 最愛" };
@@ -1218,10 +1305,30 @@
     noteInput.value = "";
     stepsInput.value = "";
     detectHint.textContent = "";
-    urlInput.focus();
+
+    // On a phone the form is a collapsible panel covering the list, so fold
+    // it away once the recipe is in -- the point is to get back to the
+    // recipes. On desktop it's always open and this is a no-op.
+    if (form.classList.contains("open")) setMobileAddFormOpen(false);
+    else urlInput.focus();
 
     refreshDerived();
   });
+
+  function setMobileAddFormOpen(open) {
+    form.classList.toggle("open", open);
+    if (!addToggleBtn) return;
+    addToggleBtn.setAttribute("aria-expanded", open ? "true" : "false");
+    addToggleBtn.textContent = open ? "✕ 收起" : "＋ 新增一筆收藏";
+  }
+
+  if (addToggleBtn) {
+    addToggleBtn.addEventListener("click", function () {
+      var willOpen = !form.classList.contains("open");
+      setMobileAddFormOpen(willOpen);
+      if (willOpen) urlInput.focus();
+    });
+  }
 
   urlInput.addEventListener("input", function () {
     var v = urlInput.value.trim();
