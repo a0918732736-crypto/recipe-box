@@ -1602,7 +1602,11 @@
     clearTimeout(saveSnapshotTimer);
     saveSnapshotTimer = setTimeout(function () {
       saveSnapshot();
-      syncNow();
+      // Local save is instant and cheap; the cloud push is not -- every push
+      // is a real commit that rebuilds the site, so it waits for a longer
+      // lull. Typing out a recipe therefore syncs once at the end, not once
+      // per pause.
+      scheduleSync();
     }, 600);
   });
   listObserver.observe(list, {
@@ -1796,7 +1800,12 @@
             setStoredSha(pushResult.sha);
             setSyncStatus("synced", "已同步");
           } else if (pushResult.conflict) {
-            setSyncStatus("idle", "偵測到其他裝置同時更新，稍後重試");
+            // Another device wrote while we were pushing. Our stored sha is
+            // now stale; re-run shortly to pick up their version and merge
+            // by timestamp rather than stranding the change here.
+            setSyncStatus("idle", "其他裝置剛剛也有更新，整合中…");
+            setStoredSha(null);
+            scheduleSync(3000);
           } else {
             setSyncStatus("error", "同步失敗，請檢查同步設定");
           }
@@ -1825,10 +1834,17 @@
     }
   });
 
-  // Piggyback a sync attempt on every debounced local save, and also poll
-  // occasionally while the tab stays open so a change made on another
-  // device shows up without needing a manual refresh.
-  var syncAfterSaveTimer = null;
+  // Debounced cloud push. Deliberately much slower than the local save:
+  // each push is a commit that triggers a site rebuild, and back-to-back
+  // pushes are what cause sha conflicts, so we wait for the edit to settle.
+  var syncDebounceTimer = null;
+  function scheduleSync(delay) {
+    clearTimeout(syncDebounceTimer);
+    syncDebounceTimer = setTimeout(syncNow, typeof delay === "number" ? delay : 8000);
+  }
+
+  // Coming back to the tab is the moment another device's change is most
+  // likely waiting, so check immediately rather than waiting for the poll.
   document.addEventListener("visibilitychange", function () {
     if (document.visibilityState === "visible") syncNow();
   });
