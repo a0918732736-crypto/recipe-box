@@ -239,20 +239,6 @@
     {
       "status": "想煮",
       "cuisine": "小菜/小食",
-      "platform": "Instagram",
-      "url": "https://www.instagram.com/reel/DcYuimqTEaj/?igsi=MWp0b3N6N2FncmRodg==",
-      "note": "節瓜花枝餅",
-      "noteSub": "",
-      "ingredients": "櫛瓜（切絲）、花枝漿 1條、辣椒碎（可省略，增香）",
-      "steps": [
-        "擠出花枝漿到碗裡，和櫛瓜絲拌勻（櫛瓜先殺青）",
-        "熱鍋下油，捏成餅狀煎至兩面金黃（撒一點辣椒碎更香）",
-        "起鍋配飯吃，這次餅有點散開，下次要讓餅更「團結」一點"
-      ]
-    },
-    {
-      "status": "想煮",
-      "cuisine": "小菜/小食",
       "platform": "Facebook",
       "url": "https://www.facebook.com/reel/1610684674011862",
       "note": "涼拌昆布鹽秋葵",
@@ -262,6 +248,20 @@
         "秋葵、金針菇燙過後冰鎮一下瀝乾",
         "加入醬汁（醬油、香油、糖）和昆布鹽後攪拌均勻",
         "撒上白芝麻，冷藏後即完成"
+      ]
+    },
+    {
+      "status": "想煮",
+      "cuisine": "小菜/小食",
+      "platform": "Instagram",
+      "url": "https://www.instagram.com/reel/DcYuimqTEaj/?igsi=MWp0b3N6N2FncmRodg==",
+      "note": "節瓜花枝餅",
+      "noteSub": "",
+      "ingredients": "櫛瓜（切絲）、花枝漿 1條、辣椒碎（可省略，增香）",
+      "steps": [
+        "擠出花枝漿到碗裡，和櫛瓜絲拌勻（櫛瓜先殺青）",
+        "熱鍋下油，捏成餅狀煎至兩面金黃（撒一點辣椒碎更香）",
+        "起鍋配飯吃，這次餅有點散開，下次要讓餅更「團結」一點"
       ]
     },
     {
@@ -398,5 +398,5 @@
       ]
     }
   ],
-  "updatedAt": "2026-09-22T08:36:53.338Z"
+  "updatedAt": "2026-09-27T05:44:01.931Z"
 }
