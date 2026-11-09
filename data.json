@@ -62,6 +62,16 @@
       ]
     },
     {
+      "status": "想煮",
+      "cuisine": "正餐",
+      "platform": "cookpad.com",
+      "url": "https://cookpad.com/tw/%E9%A3%9F%E8%AD%9C/17200542",
+      "note": "還沒寫名稱，點連結看看內容吧",
+      "noteSub": "",
+      "ingredients": "",
+      "steps": []
+    },
+    {
       "status": "已煮",
       "cuisine": "正餐",
       "platform": "手記",
@@ -398,5 +408,5 @@
       ]
     }
   ],
-  "updatedAt": "2026-11-09T05:59:10.130Z"
+  "updatedAt": "2026-11-09T06:00:38.084Z"
 }
