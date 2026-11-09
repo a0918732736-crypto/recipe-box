@@ -62,11 +62,11 @@
       ]
     },
     {
-      "status": "想煮",
+      "status": "已煮",
       "cuisine": "正餐",
       "platform": "cookpad.com",
       "url": "https://cookpad.com/tw/%E9%A3%9F%E8%AD%9C/17200542",
-      "note": "還沒寫名稱，點連結看看內容吧",
+      "note": "北非蛋",
       "noteSub": "",
       "ingredients": "",
       "steps": []
@@ -408,5 +408,5 @@
       ]
     }
   ],
-  "updatedAt": "2026-11-09T06:00:38.084Z"
+  "updatedAt": "2026-11-09T11:37:00.897Z"
 }
